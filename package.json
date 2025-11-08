@@ -1,5 +1,5 @@
 {
-  "name": "@snowfort/circuit",
+  "name": "@sky1core/circuit",
   "version": "0.0.3",
   "private": true,
   "description": "Snowfort Circuit MCP - Computer use for webapps and electron apps",
@@ -21,9 +21,9 @@
     "node": ">=18.0.0"
   },
   "license": "Apache-2.0",
-  "author": "Snowfort LLC",
+  "author": "sky1core (forked from Snowfort LLC)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snowfort-ai/circuit-mcp.git"
+    "url": "https://github.com/sky1core/circuit-mcp.git"
   }
 }

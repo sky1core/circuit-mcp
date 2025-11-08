@@ -1,5 +1,5 @@
 {
-  "name": "@snowfort/circuit-web",
+  "name": "@sky1core/circuit-web",
   "version": "0.0.14",
   "description": "Web automation CLI using Playwright for Snowfort Circuit",
   "main": "./dist/cjs/index.js",
@@ -27,7 +27,7 @@
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
-    "@snowfort/circuit-core": "^0.0.11",
+    "@sky1core/circuit-core": "^0.0.11",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "playwright-core": "^1.40.0",
     "commander": "^11.0.0"
@@ -37,10 +37,10 @@
     "typescript": "^5.0.0"
   },
   "license": "Apache-2.0",
-  "author": "Snowfort LLC",
+  "author": "sky1core (forked from Snowfort LLC)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snowfort-ai/circuit-mcp.git",
+    "url": "https://github.com/sky1core/circuit-mcp.git",
     "directory": "packages/web"
   }
 }

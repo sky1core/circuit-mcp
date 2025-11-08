@@ -1,5 +1,5 @@
 {
-  "name": "@snowfort/circuit-core",
+  "name": "@sky1core/circuit-core",
   "version": "0.0.11",
   "description": "Core MCP infrastructure and Driver interface for Snowfort Circuit",
   "main": "./dist/cjs/index.js",
@@ -35,10 +35,10 @@
     "typescript": "^5.0.0"
   },
   "license": "Apache-2.0",
-  "author": "Snowfort LLC",
+  "author": "sky1core (forked from Snowfort LLC)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snowfort-ai/circuit-mcp.git",
+    "url": "https://github.com/sky1core/circuit-mcp.git",
     "directory": "packages/core"
   }
 }

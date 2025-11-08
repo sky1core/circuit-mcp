@@ -1,5 +1,5 @@
 {
-  "name": "@snowfort/circuit-electron",
+  "name": "@sky1core/circuit-electron",
   "version": "0.0.6",
   "description": "Electron automation CLI using Playwright for Snowfort Circuit",
   "type": "module",
@@ -20,7 +20,7 @@
     "dist"
   ],
   "dependencies": {
-    "@snowfort/circuit-core": "^0.0.6",
+    "@sky1core/circuit-core": "^0.0.6",
     "@modelcontextprotocol/sdk": "^0.5.0",
     "playwright-core": "^1.40.0",
     "commander": "^11.0.0"
@@ -30,10 +30,10 @@
     "typescript": "^5.0.0"
   },
   "license": "Apache-2.0",
-  "author": "Snowfort LLC",
+  "author": "sky1core (forked from Snowfort LLC)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snowfort-ai/circuit-mcp.git",
+    "url": "https://github.com/sky1core/circuit-mcp.git",
     "directory": "packages/electron"
   },
   "scripts": {
