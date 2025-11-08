@@ -1,0 +1,12 @@
+{
+  "name": "test-electron-app",
+  "version": "1.0.0",
+  "description": "Minimal Electron app for testing orphan process cleanup",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

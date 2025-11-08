@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Electron App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            font-size: 3em;
+            margin: 0;
+        }
+        p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .info {
+            margin-top: 2em;
+            padding: 1em;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Electron App</h1>
+        <p>Minimal app for testing MCP orphan process cleanup</p>
+        <div class="info">
+            <p><strong>Process ID:</strong> <span id="pid"></span></p>
+            <p><strong>Status:</strong> Running</p>
+        </div>
+    </div>
+    <script>
+        document.getElementById('pid').textContent = process.pid;
+        console.log('[TEST-ELECTRON-APP] Renderer process PID:', process.pid);
+    </script>
+</body>
+</html>
