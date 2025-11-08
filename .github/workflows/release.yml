@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Pack electron package
+        run: |
+          cd packages/electron
+          npm pack
+          mv *.tgz ../../sky1core-circuit-electron.tgz
+
+      - name: Pack web package
+        run: |
+          cd packages/web
+          npm pack
+          mv *.tgz ../../sky1core-circuit-web.tgz
+
+      - name: Generate checksums
+        run: |
+          sha256sum sky1core-circuit-electron.tgz > sky1core-circuit-electron.tgz.sha256
+          sha256sum sky1core-circuit-web.tgz > sky1core-circuit-web.tgz.sha256
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.tgz
+            *.tgz.sha256
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

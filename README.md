@@ -3,56 +3,77 @@
 > MCP-focused fork of [snowfort-ai/circuit-mcp](https://github.com/snowfort-ai/circuit-mcp).
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![npm](https://img.shields.io/npm/v/@snowfort/circuit-web)](https://www.npmjs.com/package/@snowfort/circuit-web)
-[![npm](https://img.shields.io/npm/v/@snowfort/circuit-electron)](https://www.npmjs.com/package/@snowfort/circuit-electron)
+[![GitHub Release](https://img.shields.io/github/v/release/sky1core/circuit-mcp)](https://github.com/sky1core/circuit-mcp/releases)
 
 Snowfort Circuit MCP is a comprehensive Model Context Protocol (MCP) server suite that enables AI coding agents to automate both web browsers and Electron desktop applications with unparalleled precision and flexibility.
 
 ## 🚀 Quick Start for AI Agents
 
-### MCP Configuration
+### Installation Methods
 
-Add to your AI agent's MCP configuration file:
+Choose between automatic updates (latest) or version pinning (reproducibility):
 
-#### **Web Automation Only**
+#### **Latest Release (Automatic Updates)**
+
+Uses the most recent release automatically:
+
+**Web Automation Only:**
 ```json
 {
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["@snowfort/circuit-web@latest"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-web.tgz"]
     }
   }
 }
 ```
 
-#### **Desktop Automation Only**
+**Desktop Automation Only:**
 ```json
 {
   "mcpServers": {
     "circuit-electron": {
       "command": "npx",
-      "args": ["@snowfort/circuit-electron@latest"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-electron.tgz"]
     }
   }
 }
 ```
 
-#### **Complete Dual-Engine Setup (Recommended)**
+**Complete Dual-Engine Setup (Recommended):**
 ```json
 {
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["@snowfort/circuit-web@latest"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-web.tgz"]
     },
     "circuit-electron": {
       "command": "npx",
-      "args": ["@snowfort/circuit-electron@latest"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-electron.tgz"]
     }
   }
 }
 ```
+
+#### **Version Pinning (Reproducibility)**
+
+Pin to a specific version for bug reports and reproducible environments:
+
+**Example with v0.0.18:**
+```json
+{
+  "mcpServers": {
+    "circuit-electron": {
+      "command": "npx",
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/v0.0.18/sky1core-circuit-electron.tgz"]
+    }
+  }
+}
+```
+
+> Replace `v0.0.18` with your desired version from [Releases](https://github.com/sky1core/circuit-mcp/releases).
 
 ### First Commands
 

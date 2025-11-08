@@ -28,7 +28,7 @@ async function testMCP() {
   log('================================', 'blue');
   
   // Path to the local MCP server
-  const mcpPath = path.join(__dirname, 'packages', 'electron', 'dist', 'esm', 'cli.js');
+  const mcpPath = path.join(__dirname, '..', 'packages', 'electron', 'dist', 'cli.mjs');
   
   log(`\n📍 MCP Path: ${mcpPath}`, 'yellow');
   

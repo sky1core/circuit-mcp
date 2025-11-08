@@ -1,6 +1,8 @@
+// This file has been modified by sky1core.
+
 // Import from playwright-core (will be overridden with project version)
 import { _electron as electronDefault, ElectronApplication, Page, Request, ConsoleMessage } from "playwright-core";
-import { Driver, LaunchOpts, Session } from "@snowfort/circuit-core";
+import { Driver, LaunchOpts, Session } from "@sky1core/circuit-core";
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import { exec, spawn, ChildProcess } from "child_process";

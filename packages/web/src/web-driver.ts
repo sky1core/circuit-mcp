@@ -1,5 +1,7 @@
+// This file has been modified by sky1core.
+
 import { Browser, BrowserContext, Page, chromium, firefox, webkit, ConsoleMessage, Request, Response } from "playwright-core";
-import { Driver, LaunchOpts, Session } from "@snowfort/circuit-core";
+import { Driver, LaunchOpts, Session } from "@sky1core/circuit-core";
 import { randomUUID } from "crypto";
 
 export interface WebLaunchOpts extends LaunchOpts {

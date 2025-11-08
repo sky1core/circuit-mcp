@@ -8,14 +8,18 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist/esm",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sky1core/circuit-core": ["../core/src/index.ts"],
+      "@sky1core/circuit-core/*": ["../core/src/*"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../core/src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+// This file has been modified by sky1core.
 
 // Apply buffer patch for Node.js v24 compatibility before any MCP imports
-import "@snowfort/circuit-core/buffer-patch.js";
+import "@sky1core/circuit-core/buffer-patch.js";
 
 import { Command } from "commander";
 import { WebDriver } from "./web-driver.js";

@@ -2,39 +2,37 @@
   "name": "@sky1core/circuit-electron",
   "version": "0.0.18",
   "description": "Electron automation CLI using Playwright for Snowfort Circuit",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "bin": {
-    "circuit-electron": "./dist/esm/cli.js"
+    "circuit-electron": "./dist/cli.mjs"
   },
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "npm run build:esm && npm run build:cjs",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "tsup src/cli.ts src/index.ts --format esm,cjs --dts --clean --sourcemap --external @modelcontextprotocol/sdk --external playwright-core --external commander --external electron",
     "clean": "rm -rf dist",
     "dev": "tsc -p tsconfig.esm.json --watch",
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
-    "@sky1core/circuit-core": "^0.0.11",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "playwright-core": "^1.40.0",
     "commander": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0"
   },
   "license": "Apache-2.0",
   "author": "sky1core (forked from Snowfort LLC)",

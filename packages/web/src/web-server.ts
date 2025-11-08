@@ -1,10 +1,12 @@
+// This file has been modified by sky1core.
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Session, ToolResult } from "@snowfort/circuit-core";
+import { Session, ToolResult } from "@sky1core/circuit-core";
 import { WebDriver, WebLaunchOpts, WebSession } from "./web-driver.js";
 
 export class WebMCPServer {
