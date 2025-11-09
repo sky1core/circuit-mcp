@@ -1,6 +1,6 @@
 {
   "name": "@sky1core/circuit-web",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Web automation CLI using Playwright for Snowfort Circuit",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/cli.ts src/index.ts --format esm,cjs --dts --clean --sourcemap --external @modelcontextprotocol/sdk --external playwright-core --external commander",
+    "build": "tsup",
     "clean": "rm -rf dist",
     "dev": "tsc -p tsconfig.esm.json --watch",
     "test": "echo \"No tests yet\""

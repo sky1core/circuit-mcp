@@ -1,6 +1,6 @@
 {
   "name": "@sky1core/circuit-electron",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Electron automation CLI using Playwright for Snowfort Circuit",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/cli.ts src/index.ts --format esm,cjs --dts --clean --sourcemap --external @modelcontextprotocol/sdk --external playwright-core --external commander --external electron",
+    "build": "tsup",
     "clean": "rm -rf dist",
     "dev": "tsc -p tsconfig.esm.json --watch",
     "test": "echo \"No tests yet\""

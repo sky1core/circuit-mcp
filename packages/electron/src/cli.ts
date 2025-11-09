@@ -9,6 +9,9 @@ import { setupProcessLifecycle } from "@sky1core/circuit-core";
 import { ElectronDriver } from "./electron-driver.js";
 import { ElectronMCPServer } from "./electron-server.js";
 
+declare const __VERSION__: string;
+const VERSION = __VERSION__;
+
 // Track server instance to handle cleanup
 let serverInstance: ElectronMCPServer | null = null;
 let lifecycleManager: ReturnType<typeof setupProcessLifecycle> | null = null;
@@ -18,12 +21,12 @@ const program = new Command();
 program
   .name("circuit-electron")
   .description("Snowfort Circuit Electron MCP - Computer use for webapps and electron apps")
-  .version("0.0.17")
+  .version(VERSION)
   .option("--name <name>", "Server name for MCP handshake", "circuit-electron")
   .action(async (options) => {
     try {
       console.error("[ELECTRON-MCP] Starting MCP server...");
-      serverInstance = new ElectronMCPServer(options.name, "0.0.17");
+      serverInstance = new ElectronMCPServer(options.name, VERSION);
 
       // Setup process lifecycle management
       lifecycleManager = setupProcessLifecycle({

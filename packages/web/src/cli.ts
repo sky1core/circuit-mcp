@@ -9,6 +9,9 @@ import { setupProcessLifecycle } from "@sky1core/circuit-core";
 import { WebDriver } from "./web-driver.js";
 import { WebMCPServer } from "./web-server.js";
 
+declare const __VERSION__: string;
+const VERSION = __VERSION__;
+
 // Track server instance to handle cleanup
 let serverInstance: WebMCPServer | null = null;
 let lifecycleManager: ReturnType<typeof setupProcessLifecycle> | null = null;
@@ -18,7 +21,7 @@ const program = new Command();
 program
   .name("circuit-web")
   .description("Snowfort Circuit Web MCP - Computer use for webapps and electron apps")
-  .version("0.0.13")
+  .version(VERSION)
   .option("--port <port>", "Port to listen on (stdio mode only)")
   .option("--browser <browser>", "Default browser engine", "chromium")
   .option("--headed", "Run in headed mode by default")
@@ -26,7 +29,7 @@ program
   .action(async (options) => {
     try {
       console.error("[WEB-MCP] Starting MCP server...");
-      serverInstance = new WebMCPServer(options.name, "0.0.13");
+      serverInstance = new WebMCPServer(options.name, VERSION);
 
       // Setup process lifecycle management
       lifecycleManager = setupProcessLifecycle({
