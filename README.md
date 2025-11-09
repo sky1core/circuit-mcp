@@ -23,7 +23,7 @@ The `stable` channel automatically uses the most recent stable version:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-web.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-web.tgz"]
     }
   }
 }
@@ -35,7 +35,7 @@ The `stable` channel automatically uses the most recent stable version:
   "mcpServers": {
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-electron.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-electron.tgz"]
     }
   }
 }
@@ -47,11 +47,11 @@ The `stable` channel automatically uses the most recent stable version:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-web.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-web.tgz"]
     },
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-electron.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-electron.tgz"]
     }
   }
 }
@@ -69,7 +69,7 @@ Pin to a specific version for bug reports and reproducible environments:
   "mcpServers": {
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/v0.3.0/sky1core-circuit-electron.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/v0.3.0/circuit-electron.tgz"]
     }
   }
 }

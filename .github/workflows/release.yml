@@ -44,28 +44,28 @@ jobs:
         run: |
           cd packages/electron
           npm pack
-          mv *.tgz ../../sky1core-circuit-electron.tgz
+          mv *.tgz ../../circuit-electron.tgz
 
       - name: Pack web package
         run: |
           cd packages/web
           npm pack
-          mv *.tgz ../../sky1core-circuit-web.tgz
+          mv *.tgz ../../circuit-web.tgz
 
       - name: Generate checksums
         run: |
-          sha256sum sky1core-circuit-electron.tgz > sky1core-circuit-electron.tgz.sha256
-          sha256sum sky1core-circuit-web.tgz > sky1core-circuit-web.tgz.sha256
+          sha256sum circuit-electron.tgz > circuit-electron.tgz.sha256
+          sha256sum circuit-web.tgz > circuit-web.tgz.sha256
 
       - name: Create versioned release (draft)
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            sky1core-circuit-electron.tgz
-            sky1core-circuit-electron.tgz.sha256
-            sky1core-circuit-web.tgz
-            sky1core-circuit-web.tgz.sha256
+            circuit-electron.tgz
+            circuit-electron.tgz.sha256
+            circuit-web.tgz
+            circuit-web.tgz.sha256
           generate_release_notes: true
           draft: true
           prerelease: false
@@ -88,10 +88,10 @@ jobs:
             This is a stable channel - the tag and URL never change, only the files are updated with each stable release.
             Pre-release versions (beta, alpha, rc) do not update this channel.
           files: |
-            sky1core-circuit-electron.tgz
-            sky1core-circuit-electron.tgz.sha256
-            sky1core-circuit-web.tgz
-            sky1core-circuit-web.tgz.sha256
+            circuit-electron.tgz
+            circuit-electron.tgz.sha256
+            circuit-web.tgz
+            circuit-web.tgz.sha256
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
