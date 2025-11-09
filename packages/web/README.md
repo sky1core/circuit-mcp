@@ -1,11 +1,11 @@
-# Circuit MCP - Web and Electron Automation (sky1core fork)
+# Snowfort Circuit MCP - Computer use for webapps and electron apps
 
-> Fork of [snowfort-ai/circuit-mcp](https://github.com/snowfort-ai/circuit-mcp), maintained by sky1core.
+> MCP-focused fork of [snowfort-ai/circuit-mcp](https://github.com/snowfort-ai/circuit-mcp).
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![GitHub Release](https://img.shields.io/github/v/release/sky1core/circuit-mcp)](https://github.com/sky1core/circuit-mcp/releases)
 
-Circuit MCP is a comprehensive Model Context Protocol (MCP) server suite that enables AI coding agents to automate both web browsers and Electron desktop applications with unparalleled precision and flexibility. This is a community-maintained fork of the original Snowfort Circuit MCP project.
+Snowfort Circuit MCP is a comprehensive Model Context Protocol (MCP) server suite that enables AI coding agents to automate both web browsers and Electron desktop applications with unparalleled precision and flexibility.
 
 ## 🚀 Quick Start for AI Agents
 

@@ -1,7 +1,7 @@
 {
   "name": "@sky1core/circuit-web",
   "version": "0.0.15",
-  "description": "Web automation CLI using Playwright for Snowfort Circuit",
+  "description": "Web automation CLI using Playwright (fork of Snowfort Circuit MCP)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -10,13 +10,16 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup",
@@ -40,5 +43,8 @@
     "type": "git",
     "url": "https://github.com/sky1core/circuit-mcp.git",
     "directory": "packages/web"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
