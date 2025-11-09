@@ -11,11 +11,11 @@ Snowfort Circuit MCP is a comprehensive Model Context Protocol (MCP) server suit
 
 ### Installation Methods
 
-Choose between automatic updates (latest) or version pinning (reproducibility):
+Choose between automatic updates (recommended) or version pinning (reproducibility):
 
-#### **Latest Release (Automatic Updates)**
+#### **Stable Channel (Recommended - Always Latest)**
 
-Uses the most recent release automatically:
+The `stable` channel automatically uses the most recent stable version:
 
 **Web Automation Only:**
 ```json
@@ -23,7 +23,7 @@ Uses the most recent release automatically:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-web.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-web.tgz"]
     }
   }
 }
@@ -35,7 +35,7 @@ Uses the most recent release automatically:
   "mcpServers": {
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-electron.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-electron.tgz"]
     }
   }
 }
@@ -47,33 +47,35 @@ Uses the most recent release automatically:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-web.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-web.tgz"]
     },
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/latest/download/sky1core-circuit-electron.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/sky1core-circuit-electron.tgz"]
     }
   }
 }
 ```
+
+> **Note:** The `stable` URL never changes - only the files are updated with each stable release. Pre-release versions (beta, alpha, rc) do not update this channel. Perfect for staying current without config changes!
 
 #### **Version Pinning (Reproducibility)**
 
 Pin to a specific version for bug reports and reproducible environments:
 
-**Example with v0.0.18:**
+**Example with v0.3.0:**
 ```json
 {
   "mcpServers": {
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/v0.0.18/sky1core-circuit-electron.tgz"]
+      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/v0.3.0/sky1core-circuit-electron.tgz"]
     }
   }
 }
 ```
 
-> Replace `v0.0.18` with your desired version from [Releases](https://github.com/sky1core/circuit-mcp/releases).
+> Replace `v0.3.0` with your desired version from [Releases](https://github.com/sky1core/circuit-mcp/releases).
 
 ### First Commands
 

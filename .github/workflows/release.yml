@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  release:
+    types: [published]
 
 jobs:
   release:
@@ -12,8 +14,15 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (tag push)
+        if: github.event_name == 'push'
         uses: actions/checkout@v4
+
+      - name: Checkout code (release publish)
+        if: github.event_name == 'release'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -48,14 +57,41 @@ jobs:
           sha256sum sky1core-circuit-electron.tgz > sky1core-circuit-electron.tgz.sha256
           sha256sum sky1core-circuit-web.tgz > sky1core-circuit-web.tgz.sha256
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Create versioned release (draft)
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
         with:
           files: |
-            *.tgz
-            *.tgz.sha256
+            sky1core-circuit-electron.tgz
+            sky1core-circuit-electron.tgz.sha256
+            sky1core-circuit-web.tgz
+            sky1core-circuit-web.tgz.sha256
           generate_release_notes: true
-          draft: false
+          draft: true
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update stable channel
+        if: github.event_name == 'release' && !contains(github.event.release.tag_name, '-')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: stable
+          name: "Stable Channel"
+          body: |
+            This release always points to the latest stable version of Circuit MCP.
+
+            **For users:** Use this URL in your MCP configuration for automatic updates.
+            **Current version:** Mirrors ${{ github.event.release.tag_name }}
+
+            ---
+            This is a stable channel - the tag and URL never change, only the files are updated with each stable release.
+            Pre-release versions (beta, alpha, rc) do not update this channel.
+          files: |
+            sky1core-circuit-electron.tgz
+            sky1core-circuit-electron.tgz.sha256
+            sky1core-circuit-web.tgz
+            sky1core-circuit-web.tgz.sha256
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
