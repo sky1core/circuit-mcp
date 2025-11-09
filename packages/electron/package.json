@@ -25,7 +25,8 @@
     "build": "tsup",
     "clean": "rm -rf dist",
     "dev": "tsc -p tsconfig.esm.json --watch",
-    "test": "echo \"No tests yet\""
+    "test": "echo \"No tests yet\"",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
