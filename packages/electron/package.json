@@ -1,6 +1,6 @@
 {
   "name": "@sky1core/circuit-electron",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "Electron automation CLI using Playwright (fork of Snowfort Circuit MCP)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

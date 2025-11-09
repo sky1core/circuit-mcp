@@ -9,13 +9,7 @@ Circuit MCP is a comprehensive Model Context Protocol (MCP) server suite that en
 
 ## 🚀 Quick Start for AI Agents
 
-### Installation Methods
-
-Choose between automatic updates (recommended) or version pinning (reproducibility):
-
-#### **Stable Channel (Recommended - Always Latest)**
-
-The `stable` channel automatically uses the most recent stable version:
+### Installation
 
 **Web Automation Only:**
 ```json
@@ -23,7 +17,7 @@ The `stable` channel automatically uses the most recent stable version:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-web.tgz"]
+      "args": ["-y", "@sky1core/circuit-web"]
     }
   }
 }
@@ -35,7 +29,7 @@ The `stable` channel automatically uses the most recent stable version:
   "mcpServers": {
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-electron.tgz"]
+      "args": ["-y", "@sky1core/circuit-electron"]
     }
   }
 }
@@ -47,35 +41,15 @@ The `stable` channel automatically uses the most recent stable version:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-web.tgz"]
+      "args": ["-y", "@sky1core/circuit-web"]
     },
     "circuit-electron": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/stable/circuit-electron.tgz"]
+      "args": ["-y", "@sky1core/circuit-electron"]
     }
   }
 }
 ```
-
-> **Note:** The `stable` URL never changes - only the files are updated with each stable release. Pre-release versions (beta, alpha, rc) do not update this channel. Perfect for staying current without config changes!
-
-#### **Version Pinning (Reproducibility)**
-
-Pin to a specific version for bug reports and reproducible environments:
-
-**Example with v0.3.0:**
-```json
-{
-  "mcpServers": {
-    "circuit-electron": {
-      "command": "npx",
-      "args": ["-y", "https://github.com/sky1core/circuit-mcp/releases/download/v0.3.0/circuit-electron.tgz"]
-    }
-  }
-}
-```
-
-> Replace `v0.3.0` with your desired version from [Releases](https://github.com/sky1core/circuit-mcp/releases).
 
 ### First Commands
 
@@ -515,9 +489,9 @@ app_launch({"app": "/your/project", "mode": "development"})
 
 ### CLI Options
 
-#### Web Server (`@snowfort/circuit-web`)
+#### Web Server (`@sky1core/circuit-web`)
 ```bash
-npx @snowfort/circuit-web@latest [options]
+npx @sky1core/circuit-web@latest [options]
 
 Options:
   --browser <type>    Browser engine: chromium, firefox, webkit (default: chromium)
@@ -525,9 +499,9 @@ Options:
   --name <name>      Server name for MCP handshake (default: circuit-web)
 ```
 
-#### Electron Server (`@snowfort/circuit-electron`)
+#### Electron Server (`@sky1core/circuit-electron`)
 ```bash
-npx @snowfort/circuit-electron@latest [options]
+npx @sky1core/circuit-electron@latest [options]
 
 Options:
   --name <name>      Server name for MCP handshake (default: circuit-electron)
@@ -541,11 +515,11 @@ Options:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["@snowfort/circuit-web@latest", "--headed", "--browser", "chromium"]
+      "args": ["@sky1core/circuit-web@latest", "--headed", "--browser", "chromium"]
     },
     "circuit-electron": {
       "command": "npx",
-      "args": ["@snowfort/circuit-electron@latest"]
+      "args": ["@sky1core/circuit-electron@latest"]
     }
   }
 }
@@ -557,11 +531,11 @@ Options:
   "mcpServers": {
     "circuit-web": {
       "command": "npx",
-      "args": ["@snowfort/circuit-web@latest"]
+      "args": ["@sky1core/circuit-web@latest"]
     },
     "circuit-electron": {
       "command": "npx",
-      "args": ["@snowfort/circuit-electron@latest"]
+      "args": ["@sky1core/circuit-electron@latest"]
     }
   }
 }
@@ -571,9 +545,8 @@ Options:
 
 ```
 Published Packages:
-├── @snowfort/circuit-core@latest      # Core MCP infrastructure
-├── @snowfort/circuit-web@latest       # Web automation server (29 tools)
-└── @snowfort/circuit-electron@latest  # Desktop automation server (32 tools)
+├── @sky1core/circuit-web       # Web automation server (29 tools)
+└── @sky1core/circuit-electron  # Desktop automation server (32 tools)
 
 Local Development:
 packages/
@@ -586,9 +559,8 @@ packages/
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| [`@snowfort/circuit-core`](https://www.npmjs.com/package/@snowfort/circuit-core) | ![npm](https://img.shields.io/npm/v/@snowfort/circuit-core) | Core MCP infrastructure |
-| [`@snowfort/circuit-web`](https://www.npmjs.com/package/@snowfort/circuit-web) | ![npm](https://img.shields.io/npm/v/@snowfort/circuit-web) | Web automation CLI (29 tools) |
-| [`@snowfort/circuit-electron`](https://www.npmjs.com/package/@snowfort/circuit-electron) | ![npm](https://img.shields.io/npm/v/@snowfort/circuit-electron) | Desktop automation CLI (25+ tools) |
+| [`@sky1core/circuit-web`](https://www.npmjs.com/package/@sky1core/circuit-web) | ![npm](https://img.shields.io/npm/v/@sky1core/circuit-web) | Web automation CLI (29 tools) |
+| [`@sky1core/circuit-electron`](https://www.npmjs.com/package/@sky1core/circuit-electron) | ![npm](https://img.shields.io/npm/v/@sky1core/circuit-electron) | Desktop automation CLI (32 tools) |
 
 ## 🔧 Development
 

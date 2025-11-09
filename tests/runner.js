@@ -8,6 +8,11 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.join(__dirname, '..');
 
+// Tests to skip in CI environment (headless, no GUI)
+const CI_SKIP_TESTS = [
+  'stdin-close',  // Requires Electron GUI
+];
+
 const colors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
@@ -103,6 +108,27 @@ async function main() {
   } else {
     // Run all tests
     testsToRun = allTests;
+  }
+
+  // Filter out tests that should be skipped in CI
+  if (process.env.CI) {
+    const filtered = testsToRun.filter(test => !CI_SKIP_TESTS.includes(test.name));
+    const skipped = testsToRun.filter(test => CI_SKIP_TESTS.includes(test.name));
+
+    if (skipped.length > 0) {
+      log(colors.yellow, 'CI', `Skipping ${skipped.length} test(s) in CI environment:`);
+      skipped.forEach(test => {
+        log(colors.yellow, 'SKIP', test.name);
+      });
+      console.log();
+    }
+
+    testsToRun = filtered;
+  }
+
+  if (testsToRun.length === 0) {
+    log(colors.yellow, 'WARN', 'No tests to run');
+    return;
   }
 
   log(colors.cyan, 'TEST', `Running ${testsToRun.length} test(s)...`);

@@ -1,6 +1,6 @@
 {
   "name": "@sky1core/circuit-web",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Web automation CLI using Playwright (fork of Snowfort Circuit MCP)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
