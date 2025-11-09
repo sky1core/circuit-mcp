@@ -5,47 +5,13 @@
 import "@sky1core/circuit-core/buffer-patch.js";
 
 import { Command } from "commander";
+import { setupProcessLifecycle } from "@sky1core/circuit-core";
 import { WebDriver } from "./web-driver.js";
 import { WebMCPServer } from "./web-server.js";
 
 // Track server instance to handle cleanup
 let serverInstance: WebMCPServer | null = null;
-
-// Handle unhandled rejections
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("[WEB-MCP] Unhandled Rejection at:", promise, "reason:", reason);
-  // Don't exit immediately - let MCP server handle errors gracefully
-});
-
-process.on("uncaughtException", (error) => {
-  console.error("[WEB-MCP] Uncaught Exception:", error);
-  // Only exit on truly fatal errors
-  if (error.message && error.message.includes('MCP Server')) {
-    process.exit(1);
-  }
-});
-
-// Handle process termination gracefully
-process.on("SIGINT", async () => {
-  console.error("[WEB-MCP] Received SIGINT, shutting down gracefully...");
-  if (serverInstance) {
-    await serverInstance.cleanup();
-  }
-  process.exit(0);
-});
-
-process.on("SIGTERM", async () => {
-  console.error("[WEB-MCP] Received SIGTERM, shutting down gracefully...");
-  if (serverInstance) {
-    await serverInstance.cleanup();
-  }
-  process.exit(0);
-});
-
-// Keep the process alive
-process.stdin.on("end", () => {
-  console.error("[WEB-MCP] stdin ended, keeping process alive...");
-});
+let lifecycleManager: ReturnType<typeof setupProcessLifecycle> | null = null;
 
 const program = new Command();
 
@@ -61,11 +27,26 @@ program
     try {
       console.error("[WEB-MCP] Starting MCP server...");
       serverInstance = new WebMCPServer(options.name, "0.0.13");
+
+      // Setup process lifecycle management
+      lifecycleManager = setupProcessLifecycle({
+        serverInstance,
+        logPrefix: "[WEB-MCP]",
+        onShutdown: () => {
+          serverInstance = null;
+        }
+      });
+
       await serverInstance.run();
       console.error("[WEB-MCP] MCP server running");
+      lifecycleManager.ensureParentWatcher();
     } catch (error) {
       console.error("[WEB-MCP] Fatal MCP Server Error:", error);
-      process.exit(1);
+      if (lifecycleManager) {
+        await lifecycleManager.shutdown(1, "server failed to start");
+      } else {
+        process.exit(1);
+      }
     }
   });
 

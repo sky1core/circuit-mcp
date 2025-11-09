@@ -2,3 +2,4 @@
 
 export * from "./types.js";
 export * from "./buffer-patch.js";
+export * from "./process-lifecycle.js";

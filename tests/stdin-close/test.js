@@ -5,9 +5,8 @@
  * This simulates when the parent process (Claude Desktop) dies unexpectedly
  */
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { setTimeout } from 'timers/promises';
-import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -63,8 +62,8 @@ async function testStdinClose(testName) {
   try {
     log(colors.yellow, 'STEP', 'Starting Electron MCP server...');
 
-    // Use MCP_PATH env var to test different versions, default to current directory
-    const mcpPath = process.env.MCP_PATH || './packages/electron/dist/esm/cli.js';
+    // Use MCP_PATH env var to test different versions, default to project root
+    const mcpPath = process.env.MCP_PATH || path.join(__dirname, '../../packages/electron/dist/cli.mjs');
     log(colors.blue, 'INFO', `Using MCP: ${mcpPath}`);
 
     mcpProcess = spawn('node', [mcpPath], {

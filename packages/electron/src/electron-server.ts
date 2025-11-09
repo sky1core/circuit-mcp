@@ -13,6 +13,7 @@ export class ElectronMCPServer {
   private server: Server;
   private driver: ElectronDriver;
   private sessions = new Map<string, Session>();
+  private keepAliveInterval: NodeJS.Timeout | null = null;
 
   constructor(private name: string, private version: string = "0.1.0") {
     this.driver = new ElectronDriver();
@@ -1410,6 +1411,14 @@ export class ElectronMCPServer {
 
   async cleanup(): Promise<void> {
     console.error("[ELECTRON-MCP] Cleaning up server resources...");
+
+    // Clear keepAlive interval first
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval);
+      this.keepAliveInterval = null;
+      console.error("[ELECTRON-MCP] Cleared keepAlive interval");
+    }
+
     // Close all active sessions
     for (const [sessionId, session] of this.sessions) {
       try {
@@ -1484,9 +1493,9 @@ export class ElectronMCPServer {
       
       await this.server.connect(transport);
       console.error("[ELECTRON-MCP] Transport connected successfully");
-      
+
       // Enhanced connection monitoring with session cleanup
-      const keepAlive = setInterval(() => {
+      this.keepAliveInterval = setInterval(() => {
         console.error("[ELECTRON-MCP] Heartbeat - transport active, sessions:", this.sessions.size);
         
         // Clean up any stale sessions (older than 30 minutes)
@@ -1514,7 +1523,10 @@ export class ElectronMCPServer {
       
       // Setup cleanup handlers but don't return a promise that blocks
       const cleanup = () => {
-        clearInterval(keepAlive);
+        if (this.keepAliveInterval) {
+          clearInterval(this.keepAliveInterval);
+          this.keepAliveInterval = null;
+        }
         console.error("[ELECTRON-MCP] Server shutting down gracefully");
       };
       

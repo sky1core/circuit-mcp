@@ -13,6 +13,7 @@ export class WebMCPServer {
   private server: Server;
   private driver: WebDriver;
   private sessions = new Map<string, Session>();
+  private keepAliveInterval: NodeJS.Timeout | null = null;
 
   constructor(private name: string, private version: string = "0.1.0") {
     this.driver = new WebDriver();
@@ -909,6 +910,14 @@ export class WebMCPServer {
 
   async cleanup(): Promise<void> {
     console.error("[WEB-MCP] Cleaning up server resources...");
+
+    // Clear keepAlive interval first
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval);
+      this.keepAliveInterval = null;
+      console.error("[WEB-MCP] Cleared keepAlive interval");
+    }
+
     // Close all active sessions
     for (const [sessionId, session] of this.sessions) {
       try {
@@ -959,17 +968,20 @@ export class WebMCPServer {
       console.error("[WEB-MCP] Transport connected successfully");
       
       // Enhanced connection monitoring
-      const keepAlive = setInterval(() => {
+      this.keepAliveInterval = setInterval(() => {
         console.error("[WEB-MCP] Heartbeat - transport active, sessions:", this.sessions.size);
       }, 30000); // Every 30 seconds
-      
+
       // Keep process alive with multiple fallbacks
       process.stdin.resume();
       process.stdin.setEncoding('utf8');
-      
+
       // Setup cleanup handlers but don't return a promise that blocks
       const cleanup = () => {
-        clearInterval(keepAlive);
+        if (this.keepAliveInterval) {
+          clearInterval(this.keepAliveInterval);
+          this.keepAliveInterval = null;
+        }
         console.error("[WEB-MCP] Server shutting down gracefully");
       };
       
