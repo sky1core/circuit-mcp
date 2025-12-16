@@ -1,6 +1,9 @@
 // Process lifecycle management for MCP servers
 // Handles graceful shutdown, parent process monitoring, and signal handling
 
+import { execSync } from "child_process";
+import * as fs from "fs";
+
 export interface MCPServerInstance {
   cleanup(): Promise<void>;
 }
@@ -15,6 +18,42 @@ export interface ProcessLifecycleManager {
   shutdown(code: number, reason?: string): Promise<void>;
   ensureParentWatcher(): void;
   cleanup(): void;
+}
+
+// Check if direct parent's parent is init (ppid=1)
+// This handles the npm exec wrapper case:
+//   claude (dies) → npm exec (ppid becomes 1) → node circuit-mcp (ppid = npm exec)
+function isParentOrphaned(logPrefix: string): boolean {
+  try {
+    const parentPid = process.ppid;
+    if (parentPid <= 1) return false; // Already handled by direct ppid check
+
+    const result = execSync(`ps -o ppid= -p ${parentPid} 2>/dev/null`, {
+      encoding: "utf8",
+      timeout: 1000,
+    });
+    const grandparentPid = parseInt(result.trim(), 10);
+
+    if (grandparentPid === 1) {
+      console.error(`${logPrefix} Parent PID ${parentPid} is orphaned (grandparent ppid=1)`);
+      return true;
+    }
+    return false;
+  } catch {
+    // Parent process doesn't exist - it died
+    return true;
+  }
+}
+
+// Check if stdin is still connected
+function isStdinConnected(): boolean {
+  try {
+    // Check if FD 0 (stdin) is still valid
+    fs.fstatSync(0);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function setupProcessLifecycle(
@@ -66,12 +105,38 @@ export function setupProcessLifecycle(
     if (parentWatcher) {
       return;
     }
+    let checkCount = 0;
     parentWatcher = setInterval(() => {
-      if (process.ppid === 1 && !shuttingDown) {
+      if (shuttingDown) return;
+      checkCount++;
+
+      // Every 2s: Light checks (ppid, stdin)
+      // Check 1: Direct parent is init (ppid=1)
+      if (process.ppid === 1) {
         console.error(
           `${logPrefix} Parent process ended (ppid=1), shutting down...`
         );
         requestShutdown(0, "parent exited");
+        return;
+      }
+
+      // Check 2: stdin is disconnected (very light - just fstat)
+      if (!isStdinConnected()) {
+        console.error(
+          `${logPrefix} stdin disconnected, shutting down...`
+        );
+        requestShutdown(0, "stdin disconnected");
+        return;
+      }
+
+      // Every 10s (5 intervals): Heavy check (execSync ps command)
+      // Check 3: Parent is orphaned (handles npm exec wrapper case)
+      if (checkCount % 5 === 0 && isParentOrphaned(logPrefix)) {
+        console.error(
+          `${logPrefix} Parent process orphaned, shutting down...`
+        );
+        requestShutdown(0, "parent orphaned");
+        return;
       }
     }, 2000);
   }

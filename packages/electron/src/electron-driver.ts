@@ -13,6 +13,16 @@ import { createRequire } from "module";
 
 const execAsync = promisify(exec);
 
+// Limits for array sizes to prevent memory leaks
+const MAX_NETWORK_REQUESTS = 100;
+const MAX_CONSOLE_MESSAGES = 100;
+
+// Listener references for cleanup
+interface PageListeners {
+  request: (request: Request) => void;
+  console: (message: ConsoleMessage) => void;
+}
+
 export interface ElectronLaunchOpts extends LaunchOpts {
   app: string;
   args?: string[];
@@ -38,6 +48,7 @@ export interface ElectronSession extends Session {
   devServerProcess?: ChildProcess;
   networkRequests: Request[];
   consoleMessages: ConsoleMessage[];
+  pageListeners: Map<Page, PageListeners>;
 }
 
 export class ElectronDriver implements Driver {
@@ -446,13 +457,14 @@ export class ElectronDriver implements Driver {
       options: { ...opts, compressScreenshots: opts.compressScreenshots ?? true },
       networkRequests: [],
       consoleMessages: [],
+      pageListeners: new Map(),
     };
-    
+
     // Set up monitoring if we have a main window
     if (mainWindow) {
       this.setupPageMonitoring(mainWindow, session);
     }
-    
+
     return session;
   }
 
@@ -494,8 +506,9 @@ export class ElectronDriver implements Driver {
       options: { ...opts, compressScreenshots: opts.compressScreenshots ?? true },
       networkRequests: [],
       consoleMessages: [],
+      pageListeners: new Map(),
     };
-    
+
     // Set up monitoring if we have a main window
     if (mainWindow) {
       this.setupPageMonitoring(mainWindow, session);
@@ -752,8 +765,9 @@ export class ElectronDriver implements Driver {
         devServerProcess,
         networkRequests: [],
         consoleMessages: [],
+        pageListeners: new Map(),
       };
-      
+
       // Set up monitoring if we have a main window
       if (mainWindow) {
         this.setupPageMonitoring(mainWindow, session);
@@ -1065,8 +1079,19 @@ export class ElectronDriver implements Driver {
 
   async close(session: Session): Promise<void> {
     const electronSession = session as ElectronSession;
+
+    // Cleanup all page listeners before closing
+    for (const page of electronSession.windows.values()) {
+      this.cleanupPageMonitoring(page, electronSession);
+    }
+
+    // Clear session arrays to free memory
+    electronSession.networkRequests.length = 0;
+    electronSession.consoleMessages.length = 0;
+    electronSession.pageListeners.clear();
+
     await electronSession.electronApp.close();
-    
+
     // Clean up dev server if it exists
     if (electronSession.devServerProcess) {
       try {
@@ -1287,15 +1312,42 @@ export class ElectronDriver implements Driver {
   }
 
   private setupPageMonitoring(page: Page, session: ElectronSession): void {
-    // Network monitoring
-    page.on('request', (request) => {
+    // Create named listener functions for cleanup
+    const requestListener = (request: Request) => {
       session.networkRequests.push(request);
-    });
-    
-    // Console monitoring
-    page.on('console', (message) => {
+      // Limit array size to prevent memory leaks
+      if (session.networkRequests.length > MAX_NETWORK_REQUESTS) {
+        session.networkRequests.shift();
+      }
+    };
+
+    const consoleListener = (message: ConsoleMessage) => {
       session.consoleMessages.push(message);
+      // Limit array size to prevent memory leaks
+      if (session.consoleMessages.length > MAX_CONSOLE_MESSAGES) {
+        session.consoleMessages.shift();
+      }
+    };
+
+    // Store listener references for cleanup
+    session.pageListeners.set(page, {
+      request: requestListener,
+      console: consoleListener,
     });
+
+    // Register listeners
+    page.on('request', requestListener);
+    page.on('console', consoleListener);
+  }
+
+  private cleanupPageMonitoring(page: Page, session: ElectronSession): void {
+    const listeners = session.pageListeners.get(page);
+    if (!listeners) return;
+
+    page.off('request', listeners.request);
+    page.off('console', listeners.console);
+
+    session.pageListeners.delete(page);
   }
 
   async getNetworkRequests(session: Session): Promise<Array<{url: string, method: string, status?: number, timestamp: number}>> {
