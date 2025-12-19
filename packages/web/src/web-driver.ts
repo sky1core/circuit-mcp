@@ -4,6 +4,11 @@ import { Browser, BrowserContext, Page, chromium, firefox, webkit, ConsoleMessag
 import { Driver, LaunchOpts, Session } from "@sky1core/circuit-core";
 import { randomUUID } from "crypto";
 
+// Limits for array sizes to prevent memory leaks
+const MAX_NETWORK_REQUESTS = 100;
+const MAX_CONSOLE_MESSAGES = 100;
+const MAX_RECORDED_ACTIONS = 500;
+
 export interface WebLaunchOpts extends LaunchOpts {
   browser?: "chromium" | "firefox" | "webkit";
   headed?: boolean;
@@ -21,12 +26,21 @@ export interface ElementRef {
   level?: number;
 }
 
+// Listener references for cleanup
+export interface PageListeners {
+  dialog: (dialog: import("playwright-core").Dialog) => Promise<void>;
+  request: (request: Request) => void;
+  console: (message: ConsoleMessage) => void;
+  load: () => Promise<void>;
+}
+
 export interface PageInfo {
   id: string;
   page: Page;
   title?: string;
   url?: string;
   elementRefs?: Map<string, ElementRef>;
+  listeners?: PageListeners;
 }
 
 export interface WebSession extends Session {
@@ -456,7 +470,8 @@ export class WebDriver implements Driver {
     if (!pageInfo) {
       throw new Error(`Tab not found: ${pageId}`);
     }
-    
+
+    this.cleanupPageListeners(pageInfo);
     await pageInfo.page.close();
     webSession.pages.delete(pageId);
     
@@ -533,11 +548,11 @@ test('Generated test', async ({ page }) => {
   private setupPageListeners(session: WebSession, pageId: string): void {
     const pageInfo = session.pages.get(pageId);
     if (!pageInfo) return;
-    
+
     const page = pageInfo.page;
-    
-    // Dialog handling
-    page.on('dialog', async (dialog) => {
+
+    // Create named listener functions for cleanup
+    const dialogListener = async (dialog: import("playwright-core").Dialog) => {
       if (session.dialogHandler) {
         const { action, promptText } = session.dialogHandler;
         if (action === 'accept') {
@@ -548,27 +563,60 @@ test('Generated test', async ({ page }) => {
       } else {
         await dialog.dismiss(); // Default action
       }
-    });
-    
-    // Network monitoring
-    page.on('request', (request) => {
+    };
+
+    const requestListener = (request: Request) => {
       session.networkRequests.push(request);
-    });
-    
-    // Console monitoring
-    page.on('console', (message) => {
+      // Limit array size to prevent memory leaks
+      if (session.networkRequests.length > MAX_NETWORK_REQUESTS) {
+        session.networkRequests.shift();
+      }
+    };
+
+    const consoleListener = (message: ConsoleMessage) => {
       session.consoleMessages.push(message);
-    });
-    
-    // Update page info on navigation
-    page.on('load', async () => {
+      // Limit array size to prevent memory leaks
+      if (session.consoleMessages.length > MAX_CONSOLE_MESSAGES) {
+        session.consoleMessages.shift();
+      }
+    };
+
+    const loadListener = async () => {
       pageInfo.title = await page.title();
       pageInfo.url = page.url();
       // Clear element refs on navigation
       if (pageInfo.elementRefs) {
         pageInfo.elementRefs.clear();
       }
-    });
+    };
+
+    // Store listener references for cleanup
+    pageInfo.listeners = {
+      dialog: dialogListener,
+      request: requestListener,
+      console: consoleListener,
+      load: loadListener,
+    };
+
+    // Register listeners
+    page.on('dialog', dialogListener);
+    page.on('request', requestListener);
+    page.on('console', consoleListener);
+    page.on('load', loadListener);
+  }
+
+  private cleanupPageListeners(pageInfo: PageInfo): void {
+    if (!pageInfo.listeners) return;
+
+    const page = pageInfo.page;
+    const { dialog, request, console: consoleListener, load } = pageInfo.listeners;
+
+    page.off('dialog', dialog);
+    page.off('request', request);
+    page.off('console', consoleListener);
+    page.off('load', load);
+
+    pageInfo.listeners = undefined;
   }
 
   private recordAction(session: WebSession, type: string, selector?: string, text?: string): void {
@@ -578,14 +626,24 @@ test('Generated test', async ({ page }) => {
       text,
       timestamp: Date.now()
     });
+    // Limit array size to prevent memory leaks
+    if (session.recordedActions.length > MAX_RECORDED_ACTIONS) {
+      session.recordedActions.shift();
+    }
   }
 
   async close(session: Session): Promise<void> {
     const webSession = session as WebSession;
-    // Close all pages
+    // Cleanup listeners and close all pages
     for (const pageInfo of webSession.pages.values()) {
+      this.cleanupPageListeners(pageInfo);
       await pageInfo.page.close();
     }
+    // Clear session arrays to free memory
+    webSession.networkRequests.length = 0;
+    webSession.consoleMessages.length = 0;
+    webSession.recordedActions.length = 0;
+
     await webSession.context.close();
     await webSession.browser.close();
   }

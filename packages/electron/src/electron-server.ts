@@ -1430,83 +1430,51 @@ export class ElectronMCPServer {
     this.sessions.clear();
   }
 
-  async run(): Promise<void> {
+  async run(onFatal?: (code?: number, reason?: string) => void): Promise<void> {
+    // Single-entry exit helper to prevent multiple shutdown attempts
+    let exitCalled = false;
+    const exit = (code = 0, reason?: string) => {
+      if (exitCalled) return;
+      exitCalled = true;
+      if (onFatal) {
+        onFatal(code, reason);
+      } else {
+        process.exit(code);
+      }
+    };
+
     try {
       const transport = new StdioServerTransport();
-      
-      // Enhanced transport error handling
-      transport.onerror = (error: Error) => {
-        console.error("[ELECTRON-MCP] Transport error:", error);
-        console.error("[ELECTRON-MCP] Transport error stack:", error.stack);
-      };
-      
-      transport.onclose = () => {
-        console.error("[ELECTRON-MCP] Transport closed - connection terminated");
-        console.error("[ELECTRON-MCP] Active sessions:", this.sessions.size);
-        // Log but don't exit - the client may reconnect
-      };
-      
-      // Add additional process event handlers
-      process.stdin.on('error', (error) => {
-        console.error("[ELECTRON-MCP] stdin error:", error);
-      });
-      
-      process.stdout.on('error', (error) => {
-        console.error("[ELECTRON-MCP] stdout error:", error);
-      });
-      
-      process.stderr.on('error', (error) => {
-        console.error("[ELECTRON-MCP] stderr error:", error);
-      });
-      
-      // Add global unhandled rejection handlers to prevent crashes
-      process.on('unhandledRejection', (reason, promise) => {
-        console.error("[ELECTRON-MCP] Unhandled Rejection at:", promise);
-        console.error("[ELECTRON-MCP] Rejection reason:", reason);
-        if (reason instanceof Error) {
-          console.error("[ELECTRON-MCP] Stack trace:", reason.stack);
-        }
-        // Don't exit - just log the error and continue
-      });
-      
-      process.on('uncaughtException', (error) => {
-        console.error("[ELECTRON-MCP] Uncaught Exception:", error);
-        console.error("[ELECTRON-MCP] Stack trace:", error.stack);
-        // Don't exit for recoverable errors
-        if (error.message && (
-          error.message.includes('EPIPE') || 
-          error.message.includes('ECONNRESET') ||
-          error.message.includes('transport closed')
-        )) {
-          console.error("[ELECTRON-MCP] Recoverable error - continuing...");
-        } else {
-          // For truly unrecoverable errors, exit gracefully
-          console.error("[ELECTRON-MCP] Unrecoverable error - exiting...");
-          process.exit(1);
-        }
-      });
-      
+
+      // Transport error/close: trigger shutdown (no console.error to avoid loop)
+      transport.onerror = () => exit(1, "transport error");
+      transport.onclose = () => exit(0, "transport closed");
+
+      // stdio errors: trigger shutdown immediately (no console.error to avoid loop)
+      process.stdin.on('error', () => exit(0, "stdin error"));
+      process.stdout.on('error', () => exit(0, "stdout error"));
+      process.stderr.on('error', () => exit(0, "stderr error"));
+
       console.error("[ELECTRON-MCP] Connecting transport...");
       console.error("[ELECTRON-MCP] Process PID:", process.pid);
       console.error("[ELECTRON-MCP] Node version:", process.version);
       console.error("[ELECTRON-MCP] Platform:", process.platform);
-      
+
       await this.server.connect(transport);
       console.error("[ELECTRON-MCP] Transport connected successfully");
 
       // Enhanced connection monitoring with session cleanup
       this.keepAliveInterval = setInterval(() => {
         console.error("[ELECTRON-MCP] Heartbeat - transport active, sessions:", this.sessions.size);
-        
+
         // Clean up any stale sessions (older than 30 minutes)
         const now = Date.now();
         const staleTimeout = 30 * 60 * 1000; // 30 minutes
-        
+
         for (const [sessionId, session] of this.sessions) {
           const electronSession = session as ElectronSession;
-          // Check if session has a timestamp (we'll add this to sessions)
           const sessionAge = now - (electronSession.createdAt || now);
-          
+
           if (sessionAge > staleTimeout) {
             console.error(`[ELECTRON-MCP] Cleaning up stale session: ${sessionId} (age: ${Math.round(sessionAge / 1000)}s)`);
             this.driver.close(session).catch(err => {
@@ -1516,33 +1484,14 @@ export class ElectronMCPServer {
           }
         }
       }, 30000); // Every 30 seconds
-      
+
       // Keep process alive with multiple fallbacks
       process.stdin.resume();
       process.stdin.setEncoding('utf8');
-      
-      // Setup cleanup handlers but don't return a promise that blocks
-      const cleanup = () => {
-        if (this.keepAliveInterval) {
-          clearInterval(this.keepAliveInterval);
-          this.keepAliveInterval = null;
-        }
-        console.error("[ELECTRON-MCP] Server shutting down gracefully");
-      };
-      
-      process.on("disconnect", () => {
-        console.error("[ELECTRON-MCP] Process disconnected");
-        cleanup();
-        process.exit(0);
-      });
-      
-      process.on("SIGPIPE", () => {
-        console.error("[ELECTRON-MCP] SIGPIPE received - broken pipe");
-        cleanup();
-        process.exit(0);
-      });
-      
-      // Don't return a hanging promise - let the server.connect() promise resolve normally
+
+      process.on("disconnect", () => exit(0, "process disconnected"));
+      process.on("SIGPIPE", () => exit(0, "SIGPIPE"));
+
       console.error("[ELECTRON-MCP] Server ready for requests");
     } catch (error) {
       console.error("[ELECTRON-MCP] Failed to connect transport:", error);

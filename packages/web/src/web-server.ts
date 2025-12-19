@@ -929,44 +929,40 @@ export class WebMCPServer {
     this.sessions.clear();
   }
 
-  async run(): Promise<void> {
+  async run(onFatal?: (code?: number, reason?: string) => void): Promise<void> {
+    // Single-entry exit helper to prevent multiple shutdown attempts
+    let exitCalled = false;
+    const exit = (code = 0, reason?: string) => {
+      if (exitCalled) return;
+      exitCalled = true;
+      if (onFatal) {
+        onFatal(code, reason);
+      } else {
+        process.exit(code);
+      }
+    };
+
     try {
       console.error("[WEB-MCP] Starting Web MCP server...");
       const transport = new StdioServerTransport();
-      
-      // Enhanced transport error handling
-      transport.onerror = (error: Error) => {
-        console.error("[WEB-MCP] Transport error:", error);
-        console.error("[WEB-MCP] Transport error stack:", error.stack);
-      };
-      
-      transport.onclose = () => {
-        console.error("[WEB-MCP] Transport closed - connection terminated");
-        console.error("[WEB-MCP] Active sessions:", this.sessions.size);
-        // Log but don't exit - the client may reconnect
-      };
-      
-      // Add additional process event handlers
-      process.stdin.on('error', (error) => {
-        console.error("[WEB-MCP] stdin error:", error);
-      });
-      
-      process.stdout.on('error', (error) => {
-        console.error("[WEB-MCP] stdout error:", error);
-      });
-      
-      process.stderr.on('error', (error) => {
-        console.error("[WEB-MCP] stderr error:", error);
-      });
-      
+
+      // Transport error/close: trigger shutdown (no console.error to avoid loop)
+      transport.onerror = () => exit(1, "transport error");
+      transport.onclose = () => exit(0, "transport closed");
+
+      // stdio errors: trigger shutdown immediately (no console.error to avoid loop)
+      process.stdin.on('error', () => exit(0, "stdin error"));
+      process.stdout.on('error', () => exit(0, "stdout error"));
+      process.stderr.on('error', () => exit(0, "stderr error"));
+
       console.error("[WEB-MCP] Connecting transport...");
       console.error("[WEB-MCP] Process PID:", process.pid);
       console.error("[WEB-MCP] Node version:", process.version);
       console.error("[WEB-MCP] Platform:", process.platform);
-      
+
       await this.server.connect(transport);
       console.error("[WEB-MCP] Transport connected successfully");
-      
+
       // Enhanced connection monitoring
       this.keepAliveInterval = setInterval(() => {
         console.error("[WEB-MCP] Heartbeat - transport active, sessions:", this.sessions.size);
@@ -976,28 +972,9 @@ export class WebMCPServer {
       process.stdin.resume();
       process.stdin.setEncoding('utf8');
 
-      // Setup cleanup handlers but don't return a promise that blocks
-      const cleanup = () => {
-        if (this.keepAliveInterval) {
-          clearInterval(this.keepAliveInterval);
-          this.keepAliveInterval = null;
-        }
-        console.error("[WEB-MCP] Server shutting down gracefully");
-      };
-      
-      process.on("disconnect", () => {
-        console.error("[WEB-MCP] Process disconnected");
-        cleanup();
-        process.exit(0);
-      });
-      
-      process.on("SIGPIPE", () => {
-        console.error("[WEB-MCP] SIGPIPE received - broken pipe");
-        cleanup();
-        process.exit(0);
-      });
-      
-      // Don't return a hanging promise - let the server.connect() promise resolve normally
+      process.on("disconnect", () => exit(0, "process disconnected"));
+      process.on("SIGPIPE", () => exit(0, "SIGPIPE"));
+
       console.error("[WEB-MCP] Server ready for requests");
     } catch (error) {
       console.error("[WEB-MCP] Failed to connect transport:", error);
