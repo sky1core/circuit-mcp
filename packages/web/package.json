@@ -1,6 +1,6 @@
 {
   "name": "@sky1core/circuit-web",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Web automation CLI using Playwright (fork of Snowfort Circuit MCP)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -25,18 +25,23 @@
     "build": "tsup",
     "clean": "rm -rf dist",
     "dev": "tsc -p tsconfig.esm.json --watch",
-    "test": "echo \"No tests yet\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "commander": "^11.0.0",
     "playwright-core": "^1.40.0",
-    "commander": "^11.0.0"
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/ws": "^8.18.1",
+    "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "tsup": "^8.0.0"
+    "vitest": "^4.0.16"
   },
   "license": "Apache-2.0",
   "author": "sky1core (forked from Snowfort LLC)",

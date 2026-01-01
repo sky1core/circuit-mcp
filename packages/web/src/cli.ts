@@ -38,10 +38,25 @@ program
   .option("--browser <browser>", "Default browser engine", "chromium")
   .option("--headed", "Run in headed mode by default")
   .option("--name <name>", "Server name for MCP handshake", "circuit-web")
+  .option("--extension", "Enable Chrome extension mode for connecting to existing browser")
+  .option("--output-dir <dir>", "Directory for screenshot/pdf output (default: current directory)")
   .action(async (options) => {
     try {
       console.error("[WEB-MCP] Starting MCP server...");
-      serverInstance = new WebMCPServer(options.name || "circuit-web", VERSION);
+
+      const serverOptions = {
+        enableExtension: !!options.extension,
+        outputDir: options.outputDir,
+      };
+
+      if (options.extension) {
+        console.error("[WEB-MCP] Extension mode enabled");
+      }
+      if (options.outputDir) {
+        console.error(`[WEB-MCP] Output directory: ${options.outputDir}`);
+      }
+
+      serverInstance = new WebMCPServer(options.name || "circuit-web", VERSION, serverOptions);
 
       // Setup process lifecycle management
       lifecycleManager = setupProcessLifecycle({

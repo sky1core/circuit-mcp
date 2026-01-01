@@ -4,5 +4,7 @@ dist/
 .DS_Store
 local/
 .env
-CLAUDE.md
-AGENTS.md
+/*.md
+!README.md
+.mcp.json
+.idea/

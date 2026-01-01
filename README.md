@@ -56,13 +56,18 @@ Circuit MCP is a comprehensive Model Context Protocol (MCP) server suite that en
 Once configured, your AI agent can immediately start automating:
 
 ```javascript
-// Launch browser with optimized AI settings
+// Option 1: Launch new browser (Playwright)
 browser_launch({
   "compressScreenshots": true,
   "screenshotQuality": 50
 })
 browser_navigate({"sessionId": "...", "url": "https://github.com"})
 // Auto-snapshot included in response!
+
+// Option 2: Connect to user's Chrome browser (Extension mode)
+browser_connect()  // Requires Circuit MCP extension installed
+browser_navigate({"sessionId": "...", "url": "https://github.com"})
+// Control user's actual browser with login sessions!
 
 // Launch and control any Electron app
 app_launch({"app": "/Applications/Visual Studio Code.app"})
@@ -71,7 +76,7 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 
 ## ✨ Features
 
-### 🌐 **Web Automation (29 Tools)**
+### 🌐 **Web Automation (33+ Tools)**
 - **Cross-Browser Support**: Chromium, Firefox, WebKit
 - **🎯 AI-Optimized Snapshots**: Auto-snapshots with element references after every action
 - **📸 Smart Screenshot Compression**: JPEG compression for faster AI workflows (configurable)
@@ -102,6 +107,13 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 - **🐛 Console & Network Monitoring**: Capture application logs and network requests for debugging
 - **All Web Tools**: Every web automation tool works in desktop context
 
+### 🔌 **Extension Mode (browser_connect)**
+- **Control user's actual Chrome browser** with existing login sessions
+- **Multi-client support**: Multiple AI agents can control different tabs simultaneously
+- **Auto-discovery**: Extension automatically finds relay servers (ports 19989-19999)
+- **AI control badge**: "🤖 Circuit MCP" shown on controlled tabs
+- **Token-saving tools**: `element_exists`, `element_text`, `element_attribute` for efficient queries
+
 ### 🔧 **Architecture Benefits**
 - **🤖 AI-First Design**: Auto-snapshots, element references, and compressed images for optimal AI workflows
 - **Runtime App Selection**: Specify Electron apps at tool call time, not startup
@@ -112,60 +124,70 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 
 ## 📚 Complete Tool Reference
 
-### 🌐 Web Tools
+### 🔧 Shared Tools (Web & Electron)
 
 | Tool | Description | Key Parameters |
 |------|-------------|----------------|
-| `browser_launch` | Launch browser with AI optimizations | `browser`, `headed`, `viewport`, `compressScreenshots`, `screenshotQuality` |
-| `browser_navigate` | Navigate to URL (includes auto-snapshot) | `sessionId`, `url` |
-| `browser_resize` | Resize browser viewport | `sessionId`, `width`, `height` |
-| `browser_handle_dialog` | Set dialog auto-response | `sessionId`, `action`, `promptText` |
-| `browser_tab_new` | Create new browser tab | `sessionId` |
-| `browser_tab_list` | List all open tabs | `sessionId` |
-| `browser_tab_select` | Switch to specific tab | `sessionId`, `tabId` |
-| `browser_tab_close` | Close specific tab | `sessionId`, `tabId` |
-| `browser_network_requests` | Get network request history | `sessionId` |
-| `browser_console_messages` | Get console message history | `sessionId` |
-| `browser_generate_playwright_test` | Generate test code from actions | `sessionId` |
-| `click` | Click element (includes auto-snapshot) | `sessionId`, `selector`, `windowId` |
-| `type` | Type text (includes auto-snapshot) | `sessionId`, `selector`, `text`, `windowId` |
-| `hover` | Hover over element (includes auto-snapshot) | `sessionId`, `selector`, `windowId` |
+| `click` | Click element | `sessionId`, `selector` |
+| `type` | Type text into element | `sessionId`, `selector`, `text` |
+| `hover` | Hover over element | `sessionId`, `selector` |
 | `drag` | Drag element to target | `sessionId`, `sourceSelector`, `targetSelector` |
-| `key` | Press keyboard key (includes auto-snapshot) | `sessionId`, `key`, `windowId` |
+| `key` | Press keyboard key | `sessionId`, `key` |
 | `select` | Select dropdown option | `sessionId`, `selector`, `value` |
-| `upload` | Upload file to input | `sessionId`, `selector`, `filePath` |
-| `back` | Navigate back in history | `sessionId` |
-| `forward` | Navigate forward in history | `sessionId` |
-| `refresh` | Reload current page | `sessionId` |
-| `screenshot` | Take compressed screenshot | `sessionId`, `path` |
-| `snapshot` | Get accessibility tree with element refs | `sessionId` |
-| `pdf` | Generate PDF of page | `sessionId`, `path` |
+| `upload` | Upload file | `sessionId`, `selector`, `filePath` |
+| `screenshot` | Take screenshot | `sessionId`, `path` |
+| `snapshot` | Get accessibility tree | `sessionId` |
+| `pdf` | Generate PDF | `sessionId`, `path` |
 | `content` | Get HTML content | `sessionId` |
 | `text_content` | Get visible text | `sessionId` |
+| `element_exists` | Check if element exists | `sessionId`, `selector` |
+| `element_text` | Get element text | `sessionId`, `selector` |
+| `element_attribute` | Get element attribute | `sessionId`, `selector`, `attribute` |
 | `evaluate` | Execute JavaScript | `sessionId`, `script` |
 | `wait_for_selector` | Wait for element | `sessionId`, `selector`, `timeout` |
-| `close` | Close browser session | `sessionId` |
+| `scroll` | Scroll page | `sessionId`, `direction`, `amount` |
+| `scroll_to_element` | Scroll to element | `sessionId`, `selector` |
+| `scroll_to_top` | Scroll to top | `sessionId` |
+| `scroll_to_bottom` | Scroll to bottom | `sessionId` |
+| `close` | Close session | `sessionId` |
 
-### 🖥️ Electron Tools
+### 🌐 Web-only Tools
 
 | Tool | Description | Key Parameters |
 |------|-------------|----------------|
-| `app_launch` | Launch Electron app with AI optimizations | `app`, `mode`, `projectPath`, `startScript`, `disableDevtools`, `compressScreenshots`, `screenshotQuality` |
-| `get_windows` | List windows with type identification | `sessionId` |
+| `browser_launch` | Launch new browser (Playwright) | `browser`, `headed`, `viewport` |
+| `browser_connect` | Connect to Chrome via extension | `timeout`, `url` |
+| `browser_navigate` | Navigate to URL | `sessionId`, `url` |
+| `browser_resize` | Resize viewport | `sessionId`, `width`, `height` |
+| `browser_handle_dialog` | Handle dialogs | `sessionId`, `action` |
+| `browser_tab_new` | Create new tab | `sessionId` |
+| `browser_tab_list` | List tabs | `sessionId` |
+| `browser_tab_select` | Switch tab | `sessionId`, `tabId` |
+| `browser_tab_close` | Close tab | `sessionId`, `tabId` |
+| `browser_network_requests` | Get network history | `sessionId` |
+| `browser_console_messages` | Get console history | `sessionId` |
+| `browser_generate_playwright_test` | Generate test code | `sessionId` |
+| `back` | Navigate back | `sessionId` |
+| `forward` | Navigate forward | `sessionId` |
+| `refresh` | Reload page | `sessionId` |
+
+### 🖥️ Electron-only Tools
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `app_launch` | Launch Electron app | `app`, `mode`, `projectPath` |
+| `get_windows` | List windows | `sessionId` |
 | `ipc_invoke` | Call IPC method | `sessionId`, `channel`, `args` |
-| `fs_write_file` | Write file to disk | `sessionId`, `filePath`, `content` |
-| `fs_read_file` | Read file from disk | `sessionId`, `filePath` |
+| `fs_write_file` | Write file | `sessionId`, `filePath`, `content` |
+| `fs_read_file` | Read file | `sessionId`, `filePath` |
 | `keyboard_press` | Press key with modifiers | `sessionId`, `key`, `modifiers` |
-| `click_by_text` | Click element by text | `sessionId`, `text`, `exact` |
-| `click_by_role` | Click by accessibility role | `sessionId`, `role`, `name` |
-| `click_nth` | Click nth matching element | `sessionId`, `selector`, `index` |
 | `keyboard_type` | Type with delay | `sessionId`, `text`, `delay` |
-| `add_locator_handler` | Handle modals/popups | `sessionId`, `selector`, `action` |
+| `click_by_text` | Click by text | `sessionId`, `text` |
+| `click_by_role` | Click by role | `sessionId`, `role`, `name` |
+| `click_nth` | Click nth element | `sessionId`, `selector`, `index` |
+| `smart_click` | Smart click | `sessionId`, `target` |
+| `add_locator_handler` | Handle modals | `sessionId`, `selector`, `action` |
 | `wait_for_load_state` | Wait for page state | `sessionId`, `state` |
-| `smart_click` | Smart click with auto-detection (refs/text/CSS) | `sessionId`, `target`, `strategy`, `windowId` |
-| `browser_console_messages` | Get console logs from Electron app | `sessionId` |
-| `browser_network_requests` | Get network requests from Electron app | `sessionId` |
-| **+ Shared Web Tools** | Core web tools: `click`, `type`, `screenshot`, `evaluate`, etc. | |
 
 ## 💡 Usage Examples
 
@@ -494,9 +516,11 @@ app_launch({"app": "/your/project", "mode": "development"})
 npx @sky1core/circuit-web@latest [options]
 
 Options:
-  --browser <type>    Browser engine: chromium, firefox, webkit (default: chromium)
-  --headed           Run in headed mode (default: headless)
-  --name <name>      Server name for MCP handshake (default: circuit-web)
+  --browser <type>      Browser engine: chromium, firefox, webkit (default: chromium)
+  --headed              Run in headed mode (default: headless)
+  --name <name>         Server name for MCP handshake (default: circuit-web)
+  --extension           Enable Chrome extension mode for browser_connect
+  --output-dir <dir>    Directory for screenshot/pdf output (default: current directory)
 ```
 
 #### Electron Server (`@sky1core/circuit-electron`)
@@ -568,7 +592,7 @@ packages/
 
 ```bash
 # Clone the repository
-git clone https://github.com/snowfort-ai/circuit-mcp.git
+git clone https://github.com/sky1core/circuit-mcp.git
 cd circuit-mcp
 
 # Install dependencies
