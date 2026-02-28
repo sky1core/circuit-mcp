@@ -22,6 +22,7 @@ type MessageType =
   | 'tab_detached'
   | 'tab_create'
   | 'tab_created'
+  | 'tab_close'
   | 'error';
 
 interface RelayMessage {
@@ -130,6 +131,16 @@ async function handleRelayCommand(
         const newTab = await chrome.tabs.create({ url: createUrl, active: true });
         await sendResponseToRelay(sessionId, { type: 'tab_created', id, tabId: newTab.id });
         return;
+
+      case 'tab_close': {
+        const closeTabId = (params as { tabId: number })?.tabId;
+        if (!closeTabId) {
+          throw new Error('tab_close requires tabId');
+        }
+        await chrome.tabs.remove(closeTabId);
+        await sendResponseToRelay(sessionId, { type: 'tab_close', id });
+        return;
+      }
 
       case 'cdp_command':
         if (!method) {

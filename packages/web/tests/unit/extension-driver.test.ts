@@ -12,6 +12,8 @@ const mockRelay = {
   detachTab: vi.fn(),
   destroySession: vi.fn(),
   sendCDPCommand: vi.fn(),
+  closeTab: vi.fn(),
+  port: 19988,
 } as unknown as RelayServer;
 
 describe('ExtensionDriver', () => {
@@ -24,11 +26,7 @@ describe('ExtensionDriver', () => {
 
   describe('connect', () => {
     it('should create a session and return immediately', async () => {
-      mockRelay.createSession = vi.fn().mockReturnValue({
-        sessionId: 'test-session-id',
-        token: 'test-token',
-        relayUrl: 'ws://127.0.0.1:19988?token=test-token',
-      });
+      mockRelay.createSession = vi.fn().mockReturnValue('test-session-id');
 
       const session = await driver.connect();
 
@@ -37,8 +35,6 @@ describe('ExtensionDriver', () => {
       expect(mockRelay.waitForExtension).not.toHaveBeenCalled();
       expect(session.type).toBe('extension');
       expect(session.relaySessionId).toBe('test-session-id');
-      expect(session.token).toBe('test-token');
-      expect(session.relayUrl).toBe('ws://127.0.0.1:19988?token=test-token');
     });
   });
 
@@ -49,7 +45,7 @@ describe('ExtensionDriver', () => {
       const session = createMockSession();
       await driver.waitForConnection(session, 5000);
 
-      expect(mockRelay.waitForExtension).toHaveBeenCalledWith('test-relay-session', 5000);
+      expect(mockRelay.waitForExtension).toHaveBeenCalledWith(5000);
     });
 
     it('should use default timeout when not specified', async () => {
@@ -58,7 +54,7 @@ describe('ExtensionDriver', () => {
       const session = createMockSession();
       await driver.waitForConnection(session);
 
-      expect(mockRelay.waitForExtension).toHaveBeenCalledWith('test-relay-session', 60000);
+      expect(mockRelay.waitForExtension).toHaveBeenCalledWith(60000);
     });
   });
 
@@ -501,8 +497,7 @@ function createMockSession(): ExtensionSession {
     id: 'test-session',
     type: 'extension',
     relaySessionId: 'test-relay-session',
-    token: 'test-token',
-    relayUrl: 'ws://127.0.0.1:19988?token=test-token',
+    relayPort: 19988,
     activePage: '',
     attachedTabId: null,
     networkRequests: [],

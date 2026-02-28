@@ -22,6 +22,7 @@ type MessageType =
   | 'tab_detached'
   | 'tab_create'
   | 'tab_created'
+  | 'tab_close'
   | 'error';
 
 interface RelayMessage {

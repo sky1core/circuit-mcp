@@ -454,16 +454,8 @@ export class ExtensionDriver {
       session.activePage = '';
     }
 
-    // Use CDP to close the tab via the debugger target
-    // This will be handled by the extension
-    try {
-      await this.relay.sendCDPCommand(session.relaySessionId, 'Target.closeTarget', {
-        targetId: String(tabId)
-      });
-    } catch {
-      // If CDP method fails, try JS approach
-      await this.evaluate(session, 'window.close()');
-    }
+    // Use dedicated tab_close command which calls chrome.tabs.remove()
+    await this.relay.closeTab(session.relaySessionId, tabId);
   }
 
   async upload(session: ExtensionSession, selector: string, filePath: string): Promise<void> {

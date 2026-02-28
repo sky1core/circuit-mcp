@@ -1384,7 +1384,7 @@ export class WebMCPServer {
     const session = await this.getSession(sessionId);
     if (this.isExtensionSession(session)) {
       const tabId = await this.extensionDriver!.newTab(session);
-      return `tab-${tabId}`;
+      return String(tabId);
     } else {
       return await this.driver.newTab(session);
     }
@@ -1419,7 +1419,7 @@ export class WebMCPServer {
   private async handleCloseTab(sessionId: string, tabId: string): Promise<void> {
     const session = await this.getSession(sessionId);
     if (this.isExtensionSession(session)) {
-      await this.extensionDriver!.closeTab(session, parseInt(tabId.replace('tab-', ''), 10));
+      await this.extensionDriver!.closeTab(session, parseInt(tabId, 10));
     } else {
       await this.driver.closeTab(session, tabId);
     }

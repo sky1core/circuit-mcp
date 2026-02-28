@@ -32,6 +32,7 @@ export type MessageType =
   | 'tab_detached'
   | 'tab_create'        // Server → Extension: create a new tab
   | 'tab_created'       // Extension → Server: new tab created
+  | 'tab_close'         // Server → Extension: close a tab
 
   // Errors
   | 'error';
@@ -367,11 +368,17 @@ export class RelayServer extends EventEmitter {
     });
 
     ws.on('close', () => {
+      // Guard: ignore close events from obsolete connections
+      // This prevents a replaced connection's close handler from
+      // destroying state that belongs to the new connection
+      if (this.extensionWs !== ws) {
+        console.error('[RELAY] Close event from obsolete connection, ignoring');
+        return;
+      }
+
       this.stopHeartbeat();
       console.error('[RELAY] Extension disconnected');
-      if (this.extensionWs === ws) {
-        this.extensionWs = null;
-      }
+      this.extensionWs = null;
 
       // Reset all session attachedTabId to prevent stale state
       for (const session of this.sessions.values()) {
@@ -624,6 +631,10 @@ export class RelayServer extends EventEmitter {
   async createTab(sessionId: string, url?: string): Promise<number> {
     const result = await this.sendCommand(sessionId, 'tab_create', undefined, { url });
     return (result as { tabId: number }).tabId;
+  }
+
+  async closeTab(sessionId: string, tabId: number): Promise<void> {
+    await this.sendCommand(sessionId, 'tab_close', undefined, { tabId });
   }
 
   async sendCDPCommand(sessionId: string, method: string, params?: Record<string, unknown>): Promise<unknown> {
