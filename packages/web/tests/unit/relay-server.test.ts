@@ -6,13 +6,9 @@ import WebSocket from 'ws';
 const TEST_PORT_RANGE_START = 19970;
 const TEST_PORT_RANGE_END = 19980;
 
-/** Fetch nonce from HTTP health-check and build authenticated WS URL */
-async function getWsUrl(port: number): Promise<string> {
-  const res = await fetch(`http://127.0.0.1:${port}`, {
-    headers: { Connection: 'close' },
-  });
-  const data = await res.json() as { nonce: string };
-  return `ws://127.0.0.1:${port}?nonce=${data.nonce}`;
+/** Build authenticated WS URL using server's nonce directly */
+function getWsUrl(server: RelayServer): string {
+  return `ws://127.0.0.1:${server.port}?nonce=${server.nonce}`;
 }
 
 describe('RelayServer', () => {
@@ -73,7 +69,7 @@ describe('RelayServer', () => {
 
   describe('WebSocket connection', () => {
     it('should accept extension connection', async () => {
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve, reject) => {
         ws.on('open', () => resolve());
@@ -90,7 +86,7 @@ describe('RelayServer', () => {
         server.on('extension_connected', () => resolve());
       });
 
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await connectedPromise;
@@ -101,7 +97,7 @@ describe('RelayServer', () => {
     it('should report extension connected status', async () => {
       expect(server.isExtensionConnected()).toBe(false);
 
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
 
       // Wait a bit for the connection to be registered
@@ -133,7 +129,7 @@ describe('RelayServer', () => {
 
     it('should send command and receive response', async () => {
       const sessionId = server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -159,7 +155,7 @@ describe('RelayServer', () => {
 
     it('should handle command error response', async () => {
       const sessionId = server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -184,7 +180,7 @@ describe('RelayServer', () => {
 
     it.skip('should timeout if no response received', async () => {
       const sessionId = server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -200,7 +196,7 @@ describe('RelayServer', () => {
   describe('listTabs', () => {
     it('should return tabs list from extension', async () => {
       const sessionId = server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -231,7 +227,7 @@ describe('RelayServer', () => {
   describe('attachTab', () => {
     it('should attach to a tab', async () => {
       const sessionId = server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -257,7 +253,7 @@ describe('RelayServer', () => {
   describe('sendCDPCommand', () => {
     it('should send CDP command with correct method', async () => {
       const sessionId = server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -285,7 +281,7 @@ describe('RelayServer', () => {
 
   describe('waitForExtension', () => {
     it('should resolve immediately if extension already connected', async () => {
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -302,7 +298,7 @@ describe('RelayServer', () => {
 
       // Connect after a delay
       setTimeout(async () => {
-        const ws = new WebSocket(await getWsUrl(server.port));
+        const ws = new WebSocket(getWsUrl(server));
         ws.on('open', () => {
           setTimeout(() => ws.close(), 100);
         });
@@ -322,14 +318,14 @@ describe('RelayServer', () => {
       const sessionId = server.createSession();
 
       // Connect first extension
-      const ws1 = new WebSocket(await getWsUrl(server.port));
+      const ws1 = new WebSocket(getWsUrl(server));
       await new Promise<void>((resolve) => ws1.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
 
       expect(server.isExtensionConnected()).toBe(true);
 
       // Connect second extension (should replace first)
-      const ws2 = new WebSocket(await getWsUrl(server.port));
+      const ws2 = new WebSocket(getWsUrl(server));
       await new Promise<void>((resolve) => ws2.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -352,12 +348,23 @@ describe('RelayServer', () => {
       const res = await fetch(`http://127.0.0.1:${server.port}`, {
         headers: { Connection: 'close' },
       });
-      const data = await res.json() as { nonce: string; type: string };
+      const data = await res.json() as { type: string; nonce: string };
 
       expect(data.type).toBe('circuit-relay');
       expect(data.nonce).toBe(server.nonce);
-      expect(typeof data.nonce).toBe('string');
-      expect(data.nonce.length).toBeGreaterThan(0);
+      // No CORS header without extension origin
+      expect(res.headers.get('access-control-allow-origin')).toBeNull();
+    });
+
+    it('should set CORS header for chrome-extension origin', async () => {
+      const res = await fetch(`http://127.0.0.1:${server.port}`, {
+        headers: { Connection: 'close', Origin: 'chrome-extension://test-extension-id' },
+      });
+      const data = await res.json() as { type: string; nonce: string };
+
+      expect(data.type).toBe('circuit-relay');
+      expect(data.nonce).toBe(server.nonce);
+      expect(res.headers.get('access-control-allow-origin')).toBe('chrome-extension://test-extension-id');
     });
 
     it('should reject WS connection with wrong nonce', async () => {
@@ -387,7 +394,7 @@ describe('RelayServer', () => {
     });
 
     it('should accept WS connection with correct nonce', async () => {
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve, reject) => {
         ws.on('open', () => resolve());
@@ -397,12 +404,35 @@ describe('RelayServer', () => {
       expect(ws.readyState).toBe(WebSocket.OPEN);
       ws.close();
     });
+
+    it('should allow full flow: extension health check → nonce → WS connect', async () => {
+      // Step 1: Fetch nonce via health check with extension origin
+      const res = await fetch(`http://127.0.0.1:${server.port}`, {
+        headers: { Connection: 'close', Origin: 'chrome-extension://test-id' },
+      });
+      const data = await res.json() as { nonce: string; type: string };
+      expect(data.nonce).toBe(server.nonce);
+
+      // Step 2: Connect WS with the fetched nonce
+      const ws = new WebSocket(`ws://127.0.0.1:${server.port}?nonce=${data.nonce}`);
+      await new Promise<void>((resolve, reject) => {
+        ws.on('open', () => resolve());
+        ws.on('error', reject);
+      });
+
+      expect(ws.readyState).toBe(WebSocket.OPEN);
+
+      // Step 3: Verify CORS header
+      expect(res.headers.get('access-control-allow-origin')).toBe('chrome-extension://test-id');
+
+      ws.close();
+    });
   });
 
   describe('stop', () => {
     it('should close all connections on stop', async () => {
       server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
 
@@ -416,7 +446,7 @@ describe('RelayServer', () => {
 
     it('should reject pending commands on stop', async () => {
       const sessionId = server.createSession();
-      const ws = new WebSocket(await getWsUrl(server.port));
+      const ws = new WebSocket(getWsUrl(server));
 
       await new Promise<void>((resolve) => ws.on('open', () => resolve()));
       await new Promise(resolve => setTimeout(resolve, 50));

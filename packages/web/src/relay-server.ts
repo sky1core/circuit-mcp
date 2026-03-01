@@ -164,9 +164,12 @@ export class RelayServer extends EventEmitter {
     return new Promise((resolve, reject) => {
       const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
         if (req.method === 'GET') {
+          const origin = req.headers.origin || '';
+          // CORS: only allow chrome-extension:// origins (browser SOP blocks others)
+          const isExtension = origin.startsWith('chrome-extension://');
           res.writeHead(200, {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
+            ...(isExtension ? { 'Access-Control-Allow-Origin': origin } : {}),
           });
           res.end(JSON.stringify({
             status: 'ok',

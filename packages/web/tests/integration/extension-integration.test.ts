@@ -22,23 +22,19 @@ class FakeExtensionClient {
   ws!: WebSocket;
   receivedMessages: RelayMessage[] = [];
   private port: number;
+  private nonce: string;
   private messageHandlers = new Map<string, (msg: RelayMessage) => void>();
   private autoRespondCDP = true;
   private cdpResponder: ((method: string, params?: Record<string, unknown>) => unknown) | null = null;
   private manualResponseQueue: Array<{ id: number; result?: unknown; error?: string }> = [];
 
-  constructor(port: number) {
+  constructor(port: number, nonce: string) {
     this.port = port;
+    this.nonce = nonce;
   }
 
   async connect(): Promise<void> {
-    // Fetch nonce from HTTP health check for authentication
-    // Use Connection: close to avoid keep-alive pool issues across test teardowns
-    const res = await fetch(`http://127.0.0.1:${this.port}`, {
-      headers: { Connection: 'close' },
-    });
-    const data = await res.json() as { nonce: string };
-    this.ws = new WebSocket(`ws://127.0.0.1:${this.port}?nonce=${data.nonce}`);
+    this.ws = new WebSocket(`ws://127.0.0.1:${this.port}?nonce=${this.nonce}`);
 
     // Register handlers BEFORE open to catch messages sent on connection (e.g. session_list)
     this.ws.on('message', (data) => {
@@ -187,7 +183,7 @@ describe('Extension Integration (Fake WS Client)', () => {
 
   describe('session lifecycle', () => {
     it('should send session_list on extension connect', async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       await ext.connect();
 
       const sessionList = await ext.waitForMessage('session_list');
@@ -196,7 +192,7 @@ describe('Extension Integration (Fake WS Client)', () => {
     });
 
     it('should send session_create and receive session_created', async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       await ext.connect();
 
       const session = await driver.connect();
@@ -209,7 +205,7 @@ describe('Extension Integration (Fake WS Client)', () => {
     });
 
     it('should send session_close on driver.close()', async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       await ext.connect();
 
       const session = await driver.connect();
@@ -222,7 +218,7 @@ describe('Extension Integration (Fake WS Client)', () => {
     });
 
     it('should send tab_close when closing session with attached tab', async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
 
       // Set up tab operation handlers
       ext.onMessage('tab_attach', (msg) => {
@@ -272,7 +268,7 @@ describe('Extension Integration (Fake WS Client)', () => {
       // Create session before extension connects
       const sessionId = server.createSession();
 
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       await ext.connect();
 
       const sessionList = await ext.waitForMessage('session_list');
@@ -289,7 +285,7 @@ describe('Extension Integration (Fake WS Client)', () => {
     let session: ExtensionSession;
 
     beforeEach(async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
 
       // Set up tab operation handlers
       ext.onMessage('tabs_list', (msg) => {
@@ -374,7 +370,7 @@ describe('Extension Integration (Fake WS Client)', () => {
     let session: ExtensionSession;
 
     beforeEach(async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       await ext.connect();
       session = await driver.connect();
     });
@@ -462,7 +458,7 @@ describe('Extension Integration (Fake WS Client)', () => {
 
   describe('concurrent createTab', () => {
     it('should resolve each promise with the correct tabId even with out-of-order responses', async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       ext.disableAutoCDP();
 
       // Collect tab_create messages and respond in reverse order
@@ -516,12 +512,12 @@ describe('Extension Integration (Fake WS Client)', () => {
       const session = await driver.connect();
 
       // First extension connects
-      const ext1 = new FakeExtensionClient(server.port);
+      const ext1 = new FakeExtensionClient(server.port, server.nonce);
       await ext1.connect();
       expect(server.isExtensionConnected()).toBe(true);
 
       // Second extension connects (replaces first)
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       await ext.connect();
       expect(server.isExtensionConnected()).toBe(true);
 
@@ -549,7 +545,7 @@ describe('Extension Integration (Fake WS Client)', () => {
     });
 
     it('should throw when sending CDP command for unknown session', async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       await ext.connect();
 
       await expect(
@@ -558,7 +554,7 @@ describe('Extension Integration (Fake WS Client)', () => {
     });
 
     it('should reject pending commands when extension disconnects', async () => {
-      ext = new FakeExtensionClient(server.port);
+      ext = new FakeExtensionClient(server.port, server.nonce);
       ext.disableAutoCDP();
       await ext.connect();
 
