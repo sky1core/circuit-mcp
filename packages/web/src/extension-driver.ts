@@ -459,20 +459,15 @@ export class ExtensionDriver {
   }
 
   async close(session: ExtensionSession): Promise<void> {
-    // Close the attached tab if exists
+    // Close the attached tab using closeTab (detach + chrome.tabs.remove)
     if (session.attachedTabId !== null) {
       try {
-        await this.evaluate(session, 'window.close()');
+        await this.closeTab(session, session.attachedTabId);
       } catch {
         // Ignore errors - tab might already be closed
       }
     }
 
-    try {
-      await this.relay.detachTab(session.relaySessionId);
-    } catch {
-      // Ignore detach errors - extension might already be disconnected
-    }
     this.sessionsByRelayId.delete(session.relaySessionId);
     this.relay.destroySession(session.relaySessionId);
   }

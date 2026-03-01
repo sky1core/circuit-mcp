@@ -120,12 +120,18 @@ export class RelayServer extends EventEmitter {
   private portRangeStart: number;
   private portRangeEnd: number;
   private sessionTtlMs: number;
+  private _nonce: string;
 
   constructor(options: RelayServerOptions = {}) {
     super();
     this.portRangeStart = options.portRangeStart ?? DEFAULT_PORT_RANGE_START;
     this.portRangeEnd = options.portRangeEnd ?? DEFAULT_PORT_RANGE_END;
     this.sessionTtlMs = options.sessionTtlMs ?? SESSION_TTL_MS;
+    this._nonce = randomUUID();
+  }
+
+  get nonce(): string {
+    return this._nonce;
   }
 
   get port(): number {
@@ -165,6 +171,7 @@ export class RelayServer extends EventEmitter {
           res.end(JSON.stringify({
             status: 'ok',
             type: 'circuit-relay',
+            nonce: this._nonce,
             sessions: this.sessions.size,
             extensionConnected: this.isExtensionConnected()
           }));
@@ -174,7 +181,27 @@ export class RelayServer extends EventEmitter {
         }
       });
 
-      const wss = new WebSocketServer({ server: httpServer });
+      const wss = new WebSocketServer({
+        server: httpServer,
+        verifyClient: (info, cb) => {
+          // Validate nonce from query string
+          const url = new URL(info.req.url || '', `http://${info.req.headers.host}`);
+          const clientNonce = url.searchParams.get('nonce');
+          if (clientNonce !== this._nonce) {
+            cb(false, 401, 'Invalid nonce');
+            return;
+          }
+
+          // Validate origin: allow chrome-extension:// or no origin (Node.js clients)
+          const origin = info.origin;
+          if (origin && !origin.startsWith('chrome-extension://')) {
+            cb(false, 403, 'Forbidden origin');
+            return;
+          }
+
+          cb(true);
+        },
+      });
 
       wss.on('error', (error: any) => {
         try { httpServer.close(); } catch { /* ignore */ }

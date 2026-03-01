@@ -298,14 +298,29 @@ describe('ExtensionDriver', () => {
   });
 
   describe('close', () => {
-    it('should detach tab and destroy session', async () => {
-      mockRelay.detachTab = vi.fn().mockResolvedValue(undefined);
+    it('should destroy session when no tab attached', async () => {
       mockRelay.destroySession = vi.fn();
 
       const session = createMockSession();
       await driver.close(session);
 
+      expect(mockRelay.closeTab).not.toHaveBeenCalled();
+      expect(mockRelay.destroySession).toHaveBeenCalledWith('test-relay-session');
+    });
+
+    it('should close attached tab via closeTab then destroy session', async () => {
+      mockRelay.detachTab = vi.fn().mockResolvedValue(undefined);
+      mockRelay.closeTab = vi.fn().mockResolvedValue(undefined);
+      mockRelay.destroySession = vi.fn();
+
+      const session = createMockSession();
+      session.attachedTabId = 42;
+
+      await driver.close(session);
+
+      // closeTab internally calls detachTab + relay.closeTab
       expect(mockRelay.detachTab).toHaveBeenCalledWith('test-relay-session');
+      expect(mockRelay.closeTab).toHaveBeenCalledWith('test-relay-session', 42);
       expect(mockRelay.destroySession).toHaveBeenCalledWith('test-relay-session');
     });
   });

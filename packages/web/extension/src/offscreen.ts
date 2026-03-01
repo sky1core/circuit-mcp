@@ -44,6 +44,7 @@ interface RelayMessage {
 
 interface RelayConnection {
   url: string;
+  nonce: string | null;
   ws: WebSocket | null;
   connected: boolean;
   reconnectTimeout: ReturnType<typeof setTimeout> | null;
@@ -79,7 +80,7 @@ const knownRelayPorts: Set<number> = new Set();
 // Relay Discovery
 // ============================================================================
 
-async function testRelayHealth(port: number): Promise<boolean> {
+async function testRelayHealth(port: number): Promise<{ available: boolean; nonce: string | null }> {
   try {
     const response = await fetch(`http://127.0.0.1:${port}`, {
       method: 'GET',
@@ -87,22 +88,24 @@ async function testRelayHealth(port: number): Promise<boolean> {
     });
     if (response.ok) {
       const data = await response.json();
-      return data.type === 'circuit-relay';
+      if (data.type === 'circuit-relay') {
+        return { available: true, nonce: data.nonce || null };
+      }
     }
-    return false;
+    return { available: false, nonce: null };
   } catch {
-    return false;
+    return { available: false, nonce: null };
   }
 }
 
-async function scanForRelays(): Promise<string[]> {
-  const foundRelays: string[] = [];
+async function scanForRelays(): Promise<Array<{ url: string; nonce: string | null }>> {
+  const foundRelays: Array<{ url: string; nonce: string | null }> = [];
 
   // Check known ports first
   for (const port of knownRelayPorts) {
-    const isAvailable = await testRelayHealth(port);
-    if (isAvailable) {
-      foundRelays.push(`ws://127.0.0.1:${port}`);
+    const health = await testRelayHealth(port);
+    if (health.available) {
+      foundRelays.push({ url: `ws://127.0.0.1:${port}`, nonce: health.nonce });
     } else {
       knownRelayPorts.delete(port);
     }
@@ -113,14 +116,14 @@ async function scanForRelays(): Promise<string[]> {
   for (let port = PORT_RANGE_START; port <= PORT_RANGE_END; port++) {
     if (knownRelayPorts.has(port)) continue;
     scanPromises.push(
-      testRelayHealth(port).then(isAvailable => ({ port, isAvailable }))
+      testRelayHealth(port).then(health => ({ port, ...health }))
     );
   }
 
   const results = await Promise.all(scanPromises);
-  for (const { port, isAvailable } of results) {
-    if (isAvailable) {
-      foundRelays.push(`ws://127.0.0.1:${port}`);
+  for (const { port, available, nonce } of results) {
+    if (available) {
+      foundRelays.push({ url: `ws://127.0.0.1:${port}`, nonce });
       knownRelayPorts.add(port);
     }
   }
@@ -132,11 +135,12 @@ async function scanForRelays(): Promise<string[]> {
 // WebSocket Connection Management
 // ============================================================================
 
-function getOrCreateConnection(relayUrl: string): RelayConnection {
+function getOrCreateConnection(relayUrl: string, nonce?: string | null): RelayConnection {
   let conn = connections.get(relayUrl);
   if (!conn) {
     conn = {
       url: relayUrl,
+      nonce: nonce ?? null,
       ws: null,
       connected: false,
       reconnectTimeout: null,
@@ -144,12 +148,14 @@ function getOrCreateConnection(relayUrl: string): RelayConnection {
       hadError: false,
     };
     connections.set(relayUrl, conn);
+  } else if (nonce != null) {
+    conn.nonce = nonce;
   }
   return conn;
 }
 
-function connect(relayUrl: string): void {
-  const conn = getOrCreateConnection(relayUrl);
+function connect(relayUrl: string, nonce?: string | null): void {
+  const conn = getOrCreateConnection(relayUrl, nonce);
 
   // Don't reconnect if already connected or connecting
   if (conn.ws && (conn.ws.readyState === WebSocket.OPEN || conn.ws.readyState === WebSocket.CONNECTING)) {
@@ -166,7 +172,9 @@ function connect(relayUrl: string): void {
   conn.hadError = false;
 
   try {
-    const ws = new WebSocket(relayUrl);
+    // Append nonce to WS URL for authentication
+    const wsUrl = conn.nonce ? `${relayUrl}?nonce=${conn.nonce}` : relayUrl;
+    const ws = new WebSocket(wsUrl);
     conn.ws = ws;
 
     ws.onopen = () => {
@@ -217,9 +225,17 @@ function scheduleReconnect(relayUrl: string): void {
   const conn = connections.get(relayUrl);
   if (!conn || conn.reconnectTimeout) return;
 
-  conn.reconnectTimeout = setTimeout(() => {
+  conn.reconnectTimeout = setTimeout(async () => {
     conn.reconnectTimeout = null;
-    connect(relayUrl);
+    // Re-fetch nonce from health check (relay may have restarted with new nonce)
+    const port = parseInt(new URL(relayUrl.replace('ws://', 'http://')).port);
+    const health = await testRelayHealth(port);
+    if (health.available) {
+      connect(relayUrl, health.nonce);
+    } else {
+      // Relay gone — remove connection, autoConnect will rediscover
+      connections.delete(relayUrl);
+    }
   }, RECONNECT_DELAY_MS);
 }
 
@@ -432,11 +448,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             connected: c.connected,
           }));
           const sessionList = Array.from(sessions.values());
-          const discoveredUrls = await scanForRelays();
+          const discoveredRelays = await scanForRelays();
           sendResponse({
             connections: connList,
             sessions: sessionList,
-            discoveredRelayUrls: discoveredUrls,
+            discoveredRelayUrls: discoveredRelays.map(r => r.url),
           });
           break;
 
@@ -485,10 +501,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 async function autoConnect(): Promise<void> {
   const discoveredRelays = await scanForRelays();
 
-  for (const relayUrl of discoveredRelays) {
+  for (const { url: relayUrl, nonce } of discoveredRelays) {
     const conn = connections.get(relayUrl);
     if (!conn || !conn.connected) {
-      connect(relayUrl);
+      connect(relayUrl, nonce);
     }
   }
 }

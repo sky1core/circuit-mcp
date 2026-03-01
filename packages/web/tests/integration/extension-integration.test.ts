@@ -32,7 +32,13 @@ class FakeExtensionClient {
   }
 
   async connect(): Promise<void> {
-    this.ws = new WebSocket(`ws://127.0.0.1:${this.port}`);
+    // Fetch nonce from HTTP health check for authentication
+    // Use Connection: close to avoid keep-alive pool issues across test teardowns
+    const res = await fetch(`http://127.0.0.1:${this.port}`, {
+      headers: { Connection: 'close' },
+    });
+    const data = await res.json() as { nonce: string };
+    this.ws = new WebSocket(`ws://127.0.0.1:${this.port}?nonce=${data.nonce}`);
 
     // Register handlers BEFORE open to catch messages sent on connection (e.g. session_list)
     this.ws.on('message', (data) => {
@@ -213,6 +219,53 @@ describe('Extension Integration (Fake WS Client)', () => {
 
       const closeMsg = await ext.waitForMessageAfter('session_close', msgCountBefore);
       expect(closeMsg.sessionId).toBe(session.relaySessionId);
+    });
+
+    it('should send tab_close when closing session with attached tab', async () => {
+      ext = new FakeExtensionClient(server.port);
+
+      // Set up tab operation handlers
+      ext.onMessage('tab_attach', (msg) => {
+        ext.send({
+          sessionId: msg.sessionId,
+          type: 'tab_attached',
+          id: msg.id,
+          tabId: (msg.params as { tabId: number }).tabId,
+        });
+      });
+
+      ext.onMessage('tab_detach', (msg) => {
+        ext.send({
+          sessionId: msg.sessionId,
+          type: 'tab_detached',
+          id: msg.id,
+        });
+      });
+
+      ext.onMessage('tab_close', (msg) => {
+        ext.send({
+          sessionId: msg.sessionId,
+          type: 'tab_close',
+          id: msg.id,
+        });
+      });
+
+      await ext.connect();
+      const session = await driver.connect();
+
+      // Attach to a tab
+      await driver.attachTab(session, 7);
+      expect(session.attachedTabId).toBe(7);
+
+      const msgCountBefore = ext.receivedMessages.length;
+
+      // Close session — should send tab_close for attached tab
+      await driver.close(session);
+
+      // Verify tab_close was sent for the attached tab
+      const tabCloseMsg = await ext.waitForMessageAfter('tab_close', msgCountBefore);
+      expect(tabCloseMsg.sessionId).toBe(session.relaySessionId);
+      expect(tabCloseMsg.params).toEqual({ tabId: 7 });
     });
 
     it('should include existing sessions in session_list for new extension', async () => {
