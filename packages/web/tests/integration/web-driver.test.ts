@@ -304,19 +304,4 @@ describe('WebDriver Integration', () => {
     });
   });
 
-  describe('Playwright test generation', () => {
-    it('should generate test from recorded actions', async () => {
-      const testPage = `file://${path.join(fixturesPath, 'scroll-test.html')}`;
-      await driver.navigate(session, testPage);
-      await driver.click(session, '#top-marker');
-      await driver.scroll(session, 'down', 500);
-
-      const testCode = await driver.generatePlaywrightTest(session);
-
-      expect(testCode).toContain('@playwright/test');
-      expect(testCode).toContain('test(');
-      expect(testCode).toContain(testPage);
-      expect(testCode).toContain('#top-marker');
-    });
-  });
 });

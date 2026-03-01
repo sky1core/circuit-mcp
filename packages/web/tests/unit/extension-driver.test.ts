@@ -488,23 +488,6 @@ describe('ExtensionDriver', () => {
     });
   });
 
-  describe('generatePlaywrightTest', () => {
-    it('should generate test code from recorded actions', () => {
-      const session = createMockSession();
-      session.recordedActions = [
-        { type: 'navigate', text: 'https://example.com', timestamp: 0 },
-        { type: 'click', selector: '#button', timestamp: 1 },
-        { type: 'type', selector: '#input', text: 'hello', timestamp: 2 },
-      ];
-
-      const testCode = driver.generatePlaywrightTest(session);
-
-      expect(testCode).toContain("require('@playwright/test')");
-      expect(testCode).toContain("await page.goto('https://example.com')");
-      expect(testCode).toContain("await page.click('#button')");
-      expect(testCode).toContain("await page.fill('#input', 'hello')");
-    });
-  });
 });
 
 // Helper function to create a mock session

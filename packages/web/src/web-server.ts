@@ -715,20 +715,6 @@ export class WebMCPServer {
               required: ["sessionId"],
             },
           },
-          {
-            name: "browser_generate_playwright_test",
-            description: "Generate Playwright test code from recorded actions",
-            inputSchema: {
-              type: "object",
-              properties: {
-                sessionId: {
-                  type: "string",
-                  description: "Session ID returned from browser_launch",
-                },
-              },
-              required: ["sessionId"],
-            },
-          },
         ],
       };
     });
@@ -946,10 +932,6 @@ export class WebMCPServer {
           case "browser_console_messages":
             const messages = await this.handleConsoleMessages(toolArgs.sessionId as string);
             return { content: [{ type: "text", text: JSON.stringify(messages, null, 2) }] };
-
-          case "browser_generate_playwright_test":
-            const testCode = await this.handleGenerateTest(toolArgs.sessionId as string);
-            return { content: [{ type: "text", text: testCode }] };
 
           default:
             throw new Error(`Unknown tool: ${name}`);
@@ -1442,15 +1424,6 @@ export class WebMCPServer {
       return session.consoleMessages;
     } else {
       return await this.driver.getConsoleMessages(session);
-    }
-  }
-
-  private async handleGenerateTest(sessionId: string): Promise<string> {
-    const session = await this.getSession(sessionId);
-    if (this.isExtensionSession(session)) {
-      return this.extensionDriver!.generatePlaywrightTest(session);
-    } else {
-      return await this.driver.generatePlaywrightTest(session);
     }
   }
 

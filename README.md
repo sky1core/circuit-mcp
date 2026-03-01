@@ -76,7 +76,7 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 
 ## ✨ Features
 
-### 🌐 **Web Automation (33+ Tools)**
+### 🌐 **Web Automation (32+ Tools)**
 - **Cross-Browser Support**: Chromium, Firefox, WebKit
 - **🎯 AI-Optimized Snapshots**: Auto-snapshots with element references after every action
 - **📸 Smart Screenshot Compression**: JPEG compression for faster AI workflows (configurable)
@@ -89,7 +89,6 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 - **Navigation**: History control, page reload, URL navigation
 - **Dialog Handling**: Automatic alert/confirm/prompt management
 - **Browser Control**: Viewport resizing, window management
-- **🧪 Test Generation**: Auto-generate Playwright test code from recorded actions
 - **JavaScript Execution**: Run custom scripts in page context
 - **Smart Waiting**: Element appearance, network idle, page load states
 
@@ -166,7 +165,6 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 | `browser_tab_close` | Close tab | `sessionId`, `tabId` |
 | `browser_network_requests` | Get network history | `sessionId` |
 | `browser_console_messages` | Get console history | `sessionId` |
-| `browser_generate_playwright_test` | Generate test code | `sessionId` |
 | `back` | Navigate back | `sessionId` |
 | `forward` | Navigate forward | `sessionId` |
 | `refresh` | Reload page | `sessionId` |
@@ -242,9 +240,6 @@ await click({"sessionId": session.id, "selector": "button:has-text('Sign In')"})
 await browser_navigate({"sessionId": session.id, "url": "https://api-heavy-site.com"})
 const requests = await browser_network_requests({"sessionId": session.id})
 const consoleMessages = await browser_console_messages({"sessionId": session.id})
-
-// Generate test code from actions
-const testCode = await browser_generate_playwright_test({"sessionId": session.id})
 ```
 
 #### **Dialog Handling**
