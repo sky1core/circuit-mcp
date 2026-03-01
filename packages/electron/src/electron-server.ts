@@ -1489,9 +1489,6 @@ export class ElectronMCPServer {
       process.stdin.resume();
       process.stdin.setEncoding('utf8');
 
-      process.on("disconnect", () => exit(0, "process disconnected"));
-      process.on("SIGPIPE", () => exit(0, "SIGPIPE"));
-
       console.error("[ELECTRON-MCP] Server ready for requests");
     } catch (error) {
       console.error("[ELECTRON-MCP] Failed to connect transport:", error);

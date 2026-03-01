@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Circuit MCP Bridge</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 360px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status.connected {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    .status.attached {
+      background: #E3F2FD;
+      color: #1565C0;
+    }
+
+    .status.disconnected {
+      background: #EEEEEE;
+      color: #757575;
+    }
+
+    .section {
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2196F3;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button.primary {
+      background: #2196F3;
+      color: white;
+    }
+
+    button.primary:hover {
+      background: #1976D2;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .relays-list {
+      border: 1px solid #eee;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .relay-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .relay-item:last-child {
+      border-bottom: none;
+    }
+
+    .relay-item.connected {
+      background: #F1F8E9;
+    }
+
+    .relay-item.attached {
+      background: #E3F2FD;
+    }
+
+    .relay-item.empty {
+      color: #999;
+      font-style: italic;
+    }
+
+    .relay-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .relay-status {
+      font-size: 10px;
+    }
+
+    .relay-port {
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .relay-url {
+      color: #666;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: none;
+    }
+
+    .relay-tab {
+      font-size: 11px;
+      color: #1565C0;
+      background: #E3F2FD;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .relay-tab-info {
+      font-size: 11px;
+      color: #333;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .relay-source {
+      font-size: 10px;
+      color: #666;
+      background: #EEEEEE;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .relay-actions {
+      flex-shrink: 0;
+    }
+
+    .remove-btn {
+      background: transparent;
+      color: #999;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .remove-btn:hover {
+      color: #D32F2F;
+      background: #FFEBEE;
+    }
+
+    .tabs-list {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 6px;
+    }
+
+    .tab-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .tab-item:last-child {
+      border-bottom: none;
+    }
+
+    .tab-item:hover {
+      background: #F5F5F5;
+    }
+
+    .tab-item.active {
+      background: #E3F2FD;
+    }
+
+    .tab-title {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-url {
+      font-size: 11px;
+      color: #888;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-controller {
+      font-size: 10px;
+      color: #1565C0;
+      margin-top: 4px;
+    }
+
+    .error {
+      color: #D32F2F;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .info {
+      font-size: 12px;
+      color: #666;
+      padding: 12px;
+      background: #F5F5F5;
+      border-radius: 6px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    Circuit MCP Bridge
+    <span id="statusBadge" class="status disconnected">
+      <span id="statusText">Disconnected</span>
+    </span>
+  </h1>
+
+  <div class="section">
+    <div class="section-title">Relay Servers (auto-discovered)</div>
+    <div id="relaysList" class="relays-list">
+      <!-- Relays will be populated here -->
+    </div>
+  </div>
+
+  <div class="info">
+    Scanning ports 19989-19999 for relay servers.
+  </div>
+
+  <script src="dist/popup.js"></script>
+</body>
+</html>

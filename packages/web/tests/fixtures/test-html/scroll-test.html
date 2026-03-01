@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scroll Test Page</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .content {
+      height: 3000px;
+      background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+    }
+    .marker {
+      padding: 20px;
+      margin: 50px 0;
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+    #top-marker { margin-top: 0; }
+    #middle-marker { margin-top: 1000px; }
+    #bottom-marker { margin-top: 1000px; }
+    .scroll-info {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="scroll-info" id="scroll-info">
+    Scroll Y: <span id="scroll-y">0</span>
+  </div>
+  <div class="content">
+    <div class="marker" id="top-marker">Top Marker</div>
+    <div class="marker" id="middle-marker">Middle Marker</div>
+    <div class="marker" id="bottom-marker">Bottom Marker</div>
+  </div>
+  <script>
+    window.addEventListener('scroll', () => {
+      document.getElementById('scroll-y').textContent = Math.round(window.scrollY);
+    });
+  </script>
+</body>
+</html>

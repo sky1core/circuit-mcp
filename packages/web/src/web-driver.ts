@@ -190,30 +190,28 @@ export class WebDriver implements Driver {
     }
     
     try {
-      // Check if the script contains a return statement outside of a function
-      // If it does, wrap it in an IIFE (Immediately Invoked Function Expression)
-      const trimmedScript = script.trim();
-      const hasReturnOutsideFunction = /^return\s+|[\s;]return\s+/.test(trimmedScript) && 
-                                       !trimmedScript.startsWith('function') && 
-                                       !trimmedScript.startsWith('(') &&
-                                       !trimmedScript.includes('=>');
-      
-      let evalScript = script;
-      if (hasReturnOutsideFunction) {
-        // Wrap in IIFE to make return statement valid
-        evalScript = `(() => { ${script} })()`;
-      }
-      
-      // Execute the script with proper error handling
-      return await pageInfo.page.evaluate(evalScript);
+      // Try to execute the script directly first
+      return await pageInfo.page.evaluate(script);
     } catch (error) {
-      // Handle syntax errors and other evaluation errors gracefully
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
+      // If we get "Illegal return statement", wrap in IIFE and retry
+      if (errorMessage.includes('Illegal return statement')) {
+        try {
+          const wrappedScript = `(() => { ${script} })()`;
+          return await pageInfo.page.evaluate(wrappedScript);
+        } catch (retryError) {
+          const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+          console.error(`[WEB-MCP] JavaScript evaluation error:`, retryMessage);
+          console.error(`[WEB-MCP] Script that failed:`, script);
+          throw new Error(`JavaScript evaluation failed: ${retryMessage}`);
+        }
+      }
+
       // Log detailed error for debugging
       console.error(`[WEB-MCP] JavaScript evaluation error:`, errorMessage);
       console.error(`[WEB-MCP] Script that failed:`, script);
-      
+
       // Re-throw with more context
       throw new Error(`JavaScript evaluation failed: ${errorMessage}`);
     }
@@ -279,20 +277,25 @@ export class WebDriver implements Driver {
   }
 
   private generateSelector(node: any): string {
+    // Escape special characters in name for use in selectors
+    const escapeName = (name: string): string => {
+      return name.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    };
+
     // Generate basic CSS selector based on node properties
     if (node.role === 'link' && node.name) {
-      return `a[href]:has-text("${node.name}")`;
+      return `a[href]:has-text("${escapeName(node.name)}")`;
     }
     if (node.role === 'button' && node.name) {
-      return `button:has-text("${node.name}")`;
+      return `button:has-text("${escapeName(node.name)}")`;
     }
     if (node.role === 'heading' && node.name) {
-      return `h${node.level || '1'}:has-text("${node.name}")`;
+      return `h${node.level || '1'}:has-text("${escapeName(node.name)}")`;
     }
     if (node.role === 'textbox' && node.name) {
-      return `input[placeholder*="${node.name}"]`;
+      return `input[placeholder*="${escapeName(node.name)}"]`;
     }
-    
+
     // Fallback to role-based selector
     return `[role="${node.role}"]`;
   }
@@ -408,6 +411,41 @@ export class WebDriver implements Driver {
     return await pageInfo.page.textContent('body') || '';
   }
 
+  async exists(session: Session, selector: string): Promise<boolean> {
+    const webSession = session as WebSession;
+    const pageInfo = webSession.pages.get(webSession.activePage);
+    if (!pageInfo) {
+      throw new Error('No active page found');
+    }
+    return await pageInfo.page.locator(selector).count() > 0;
+  }
+
+  async getText(session: Session, selector: string): Promise<string | null> {
+    const webSession = session as WebSession;
+    const pageInfo = webSession.pages.get(webSession.activePage);
+    if (!pageInfo) {
+      throw new Error('No active page found');
+    }
+    const locator = pageInfo.page.locator(selector).first();
+    if (await locator.count() === 0) {
+      return null;
+    }
+    return await locator.textContent();
+  }
+
+  async getAttribute(session: Session, selector: string, attribute: string): Promise<string | null> {
+    const webSession = session as WebSession;
+    const pageInfo = webSession.pages.get(webSession.activePage);
+    if (!pageInfo) {
+      throw new Error('No active page found');
+    }
+    const locator = pageInfo.page.locator(selector).first();
+    if (await locator.count() === 0) {
+      return null;
+    }
+    return await locator.getAttribute(attribute);
+  }
+
   async resize(session: Session, width: number, height: number): Promise<void> {
     const webSession = session as WebSession;
     const pageInfo = webSession.pages.get(webSession.activePage);
@@ -416,6 +454,62 @@ export class WebDriver implements Driver {
     }
     await pageInfo.page.setViewportSize({ width, height });
     this.recordAction(webSession, 'resize', undefined, `${width}x${height}`);
+  }
+
+  async scroll(session: Session, direction: 'up' | 'down' | 'left' | 'right', amount?: number): Promise<void> {
+    const webSession = session as WebSession;
+    const pageInfo = webSession.pages.get(webSession.activePage);
+    if (!pageInfo) {
+      throw new Error('No active page found');
+    }
+
+    const scrollAmount = amount || 500;
+    let scrollX = 0, scrollY = 0;
+
+    switch (direction) {
+      case 'up': scrollY = -scrollAmount; break;
+      case 'down': scrollY = scrollAmount; break;
+      case 'left': scrollX = -scrollAmount; break;
+      case 'right': scrollX = scrollAmount; break;
+    }
+
+    await pageInfo.page.evaluate(`window.scrollBy(${scrollX}, ${scrollY})`);
+    this.recordAction(webSession, 'scroll', undefined, `${direction} ${scrollAmount}`);
+  }
+
+  async scrollToElement(session: Session, selector: string): Promise<void> {
+    const webSession = session as WebSession;
+    const pageInfo = webSession.pages.get(webSession.activePage);
+    if (!pageInfo) {
+      throw new Error('No active page found');
+    }
+
+    // Escape backslashes first, then single quotes for JavaScript string
+    const escapedSelector = selector.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    await pageInfo.page.evaluate(`document.querySelector('${escapedSelector}')?.scrollIntoView({ block: 'center' })`);
+    this.recordAction(webSession, 'scrollTo', selector);
+  }
+
+  async scrollToTop(session: Session): Promise<void> {
+    const webSession = session as WebSession;
+    const pageInfo = webSession.pages.get(webSession.activePage);
+    if (!pageInfo) {
+      throw new Error('No active page found');
+    }
+
+    await pageInfo.page.evaluate(`window.scrollTo(0, 0)`);
+    this.recordAction(webSession, 'scrollToTop');
+  }
+
+  async scrollToBottom(session: Session): Promise<void> {
+    const webSession = session as WebSession;
+    const pageInfo = webSession.pages.get(webSession.activePage);
+    if (!pageInfo) {
+      throw new Error('No active page found');
+    }
+
+    await pageInfo.page.evaluate(`window.scrollTo(0, document.body.scrollHeight)`);
+    this.recordAction(webSession, 'scrollToBottom');
   }
 
   async handleDialog(session: Session, action: 'accept' | 'dismiss', promptText?: string): Promise<void> {
@@ -471,18 +565,19 @@ export class WebDriver implements Driver {
       throw new Error(`Tab not found: ${pageId}`);
     }
 
+    // Check if this is the last tab BEFORE closing
+    if (webSession.pages.size === 1) {
+      throw new Error('Cannot close the last tab');
+    }
+
     this.cleanupPageListeners(pageInfo);
     await pageInfo.page.close();
     webSession.pages.delete(pageId);
-    
+
     // If we closed the active page, switch to another one
     if (webSession.activePage === pageId) {
       const remainingPages = Array.from(webSession.pages.keys());
-      if (remainingPages.length > 0) {
-        webSession.activePage = remainingPages[0];
-      } else {
-        throw new Error('Cannot close the last tab');
-      }
+      webSession.activePage = remainingPages[0];
     }
   }
 
@@ -502,47 +597,6 @@ export class WebDriver implements Driver {
       text: msg.text(),
       timestamp: Date.now() // Approximation, would need to track actual timestamps
     }));
-  }
-
-  async generatePlaywrightTest(session: Session): Promise<string> {
-    const webSession = session as WebSession;
-    let testCode = `const { test, expect } = require('@playwright/test');
-
-test('Generated test', async ({ page }) => {
-`;
-    
-    for (const action of webSession.recordedActions) {
-      switch (action.type) {
-        case 'navigate':
-          testCode += `  await page.goto('${action.text}');
-`;
-          break;
-        case 'click':
-          testCode += `  await page.click('${action.selector}');
-`;
-          break;
-        case 'type':
-          testCode += `  await page.fill('${action.selector}', '${action.text}');
-`;
-          break;
-        case 'key':
-          testCode += `  await page.keyboard.press('${action.text}');
-`;
-          break;
-        case 'hover':
-          testCode += `  await page.hover('${action.selector}');
-`;
-          break;
-        case 'select':
-          testCode += `  await page.selectOption('${action.selector}', '${action.text}');
-`;
-          break;
-      }
-    }
-    
-    testCode += `});
-`;
-    return testCode;
   }
 
   private setupPageListeners(session: WebSession, pageId: string): void {
@@ -582,11 +636,15 @@ test('Generated test', async ({ page }) => {
     };
 
     const loadListener = async () => {
-      pageInfo.title = await page.title();
-      pageInfo.url = page.url();
-      // Clear element refs on navigation
-      if (pageInfo.elementRefs) {
-        pageInfo.elementRefs.clear();
+      try {
+        pageInfo.title = await page.title();
+        pageInfo.url = page.url();
+        // Clear element refs on navigation
+        if (pageInfo.elementRefs) {
+          pageInfo.elementRefs.clear();
+        }
+      } catch {
+        // Page may be closed or navigated away, ignore errors
       }
     };
 
@@ -634,17 +692,29 @@ test('Generated test', async ({ page }) => {
 
   async close(session: Session): Promise<void> {
     const webSession = session as WebSession;
-    // Cleanup listeners and close all pages
-    for (const pageInfo of webSession.pages.values()) {
-      this.cleanupPageListeners(pageInfo);
-      await pageInfo.page.close();
-    }
-    // Clear session arrays to free memory
-    webSession.networkRequests.length = 0;
-    webSession.consoleMessages.length = 0;
-    webSession.recordedActions.length = 0;
+    try {
+      // Cleanup listeners and close all pages
+      for (const pageInfo of webSession.pages.values()) {
+        this.cleanupPageListeners(pageInfo);
+        try {
+          await pageInfo.page.close();
+        } catch (error) {
+          console.error(`[WEB-MCP] Error closing page:`, error);
+        }
+      }
+      // Clear session arrays to free memory
+      webSession.networkRequests.length = 0;
+      webSession.consoleMessages.length = 0;
+      webSession.recordedActions.length = 0;
 
-    await webSession.context.close();
-    await webSession.browser.close();
+      try {
+        await webSession.context.close();
+      } catch (error) {
+        console.error(`[WEB-MCP] Error closing context:`, error);
+      }
+    } finally {
+      await webSession.browser.close();
+    }
   }
+
 }
