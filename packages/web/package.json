@@ -1,6 +1,6 @@
 {
   "name": "@sky1core/circuit-web",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Web automation CLI using Playwright (fork of Snowfort Circuit MCP)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -17,6 +17,11 @@
   },
   "files": [
     "dist",
+    "extension/dist",
+    "extension/icons",
+    "extension/manifest.json",
+    "extension/popup.html",
+    "extension/offscreen.html",
     "LICENSE",
     "NOTICE",
     "README.md"
@@ -28,7 +33,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build && cd extension && npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
