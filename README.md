@@ -76,7 +76,7 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 
 ## ✨ Features
 
-### 🌐 **Web Automation (32+ Tools)**
+### 🌐 **Web Automation (35 Tools)**
 - **Cross-Browser Support**: Chromium, Firefox, WebKit
 - **🎯 AI-Optimized Snapshots**: Auto-snapshots with element references after every action
 - **📸 Smart Screenshot Compression**: JPEG compression for faster AI workflows (configurable)
@@ -112,6 +112,22 @@ click({"sessionId": "...", "selector": "button[title='New File']"})
 - **Auto-discovery**: Extension automatically finds relay servers (ports 19989-19999)
 - **AI control badge**: "🤖 Circuit MCP" shown on controlled tabs
 - **Token-saving tools**: `element_exists`, `element_text`, `element_attribute` for efficient queries
+
+**Chrome Extension Setup:**
+1. Install: `npm install @sky1core/circuit-web`
+2. Open `chrome://extensions` → Enable Developer mode
+3. Click "Load unpacked" → Select `node_modules/@sky1core/circuit-web/extension`
+4. Add `--extension` flag to MCP config:
+```json
+{
+  "mcpServers": {
+    "circuit-web": {
+      "command": "npx",
+      "args": ["-y", "@sky1core/circuit-web", "--extension"]
+    }
+  }
+}
+```
 
 ### 🔧 **Architecture Benefits**
 - **🤖 AI-First Design**: Auto-snapshots, element references, and compressed images for optimal AI workflows
@@ -284,7 +300,7 @@ const session2 = await app_launch({
 })
 ```
 
-#### **Electron Forge Support (NEW in v0.5.7)**
+#### **Electron Forge Support**
 
 **Recommended Approach (Most Reliable):**
 ```javascript
@@ -295,21 +311,16 @@ const session2 = await app_launch({
 const session = await app_launch({
   "app": "/path/to/forge-project",
   "mode": "development"
-  // Don't use startScript - let manual npm start handle it
 })
-// This approach ensures proper timing and reliable launches
 ```
 
-**Experimental Auto-Start Feature:**
+**Auto-Start Feature:**
 ```javascript
-// The MCP can attempt to auto-start the dev server (experimental)
 const session = await app_launch({
   "app": "/path/to/forge-project",
   "mode": "development",
-  "startScript": "start"  // Attempts to run 'npm run start' automatically
+  "startScript": "start"  // Runs 'npm run start' automatically
 })
-// Features: 30s timeout, progress updates every 5s, enhanced Forge pattern detection
-// Note: If you experience problems, use the manual approach above
 ```
 
 ## 🚀 Quick Start Guide for Electron Automation
@@ -564,7 +575,7 @@ Options:
 
 ```
 Published Packages:
-├── @sky1core/circuit-web       # Web automation server (29 tools)
+├── @sky1core/circuit-web       # Web automation server (35 tools)
 └── @sky1core/circuit-electron  # Desktop automation server (32 tools)
 
 Local Development:
@@ -578,7 +589,7 @@ packages/
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| [`@sky1core/circuit-web`](https://www.npmjs.com/package/@sky1core/circuit-web) | ![npm](https://img.shields.io/npm/v/@sky1core/circuit-web) | Web automation CLI (29 tools) |
+| [`@sky1core/circuit-web`](https://www.npmjs.com/package/@sky1core/circuit-web) | ![npm](https://img.shields.io/npm/v/@sky1core/circuit-web) | Web automation CLI (35 tools) |
 | [`@sky1core/circuit-electron`](https://www.npmjs.com/package/@sky1core/circuit-electron) | ![npm](https://img.shields.io/npm/v/@sky1core/circuit-electron) | Desktop automation CLI (32 tools) |
 
 ## 🔧 Development
@@ -604,10 +615,10 @@ pnpm -r dev
 
 ```bash
 # Web automation server
-./packages/web/dist/esm/cli.js --headed
+node ./packages/web/dist/cli.mjs --headed
 
-# Desktop automation server  
-./packages/electron/dist/esm/cli.js
+# Desktop automation server
+node ./packages/electron/dist/cli.mjs
 ```
 
 ### Testing
@@ -621,8 +632,6 @@ pnpm -r clean
 ```
 
 ## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
