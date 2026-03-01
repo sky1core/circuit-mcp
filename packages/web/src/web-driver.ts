@@ -692,18 +692,29 @@ export class WebDriver implements Driver {
 
   async close(session: Session): Promise<void> {
     const webSession = session as WebSession;
-    // Cleanup listeners and close all pages
-    for (const pageInfo of webSession.pages.values()) {
-      this.cleanupPageListeners(pageInfo);
-      await pageInfo.page.close();
-    }
-    // Clear session arrays to free memory
-    webSession.networkRequests.length = 0;
-    webSession.consoleMessages.length = 0;
-    webSession.recordedActions.length = 0;
+    try {
+      // Cleanup listeners and close all pages
+      for (const pageInfo of webSession.pages.values()) {
+        this.cleanupPageListeners(pageInfo);
+        try {
+          await pageInfo.page.close();
+        } catch (error) {
+          console.error(`[WEB-MCP] Error closing page:`, error);
+        }
+      }
+      // Clear session arrays to free memory
+      webSession.networkRequests.length = 0;
+      webSession.consoleMessages.length = 0;
+      webSession.recordedActions.length = 0;
 
-    await webSession.context.close();
-    await webSession.browser.close();
+      try {
+        await webSession.context.close();
+      } catch (error) {
+        console.error(`[WEB-MCP] Error closing context:`, error);
+      }
+    } finally {
+      await webSession.browser.close();
+    }
   }
 
 }

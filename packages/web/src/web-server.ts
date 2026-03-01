@@ -1451,6 +1451,11 @@ export class WebMCPServer {
     }
     this.sessions.clear();
 
+    // Destroy extension driver before stopping relay
+    if (this.extensionDriver) {
+      this.extensionDriver.destroy();
+    }
+
     // Stop relay server if running
     if (this.relayServer) {
       try {
@@ -1511,9 +1516,6 @@ export class WebMCPServer {
       // Keep process alive with multiple fallbacks
       process.stdin.resume();
       process.stdin.setEncoding('utf8');
-
-      process.on("disconnect", () => exit(0, "process disconnected"));
-      process.on("SIGPIPE", () => exit(0, "SIGPIPE"));
 
       console.error("[WEB-MCP] Server ready for requests");
     } catch (error) {

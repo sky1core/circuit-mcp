@@ -151,21 +151,8 @@ export function setupProcessLifecycle(
     console.error(`${logPrefix} Uncaught Exception:`, error);
     console.error(`${logPrefix} Error stack:`, error.stack);
 
-    // Be more conservative about what constitutes a "fatal" error
-    if (
-      error.message &&
-      (error.message.includes("MCP Server failed to start") ||
-        error.message.includes("Transport initialization failed") ||
-        error.message.includes("EADDRINUSE"))
-    ) {
-      console.error(`${logPrefix} Fatal server error detected, exiting...`);
-      requestShutdown(1, "fatal exception");
-    } else {
-      console.error(
-        `${logPrefix} Non-fatal exception caught, MCP transport will remain active`
-      );
-      // Don't exit for app launch failures, timeouts, or other recoverable errors
-    }
+    // uncaughtException leaves process in an unreliable state — shut down
+    requestShutdown(1, "uncaught exception");
   });
 
   // Handle process termination gracefully

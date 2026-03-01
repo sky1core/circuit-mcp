@@ -38,12 +38,13 @@ const MAX_CONSOLE_MESSAGES = 100;
 export class ExtensionDriver {
   private relay: RelayServer;
   private sessionsByRelayId = new Map<string, ExtensionSession>();
+  private onCdpEvent: (sessionId: string, method: string, params: Record<string, unknown>) => void;
 
   constructor(relay: RelayServer) {
     this.relay = relay;
 
     // Subscribe to CDP events from relay to populate session arrays
-    this.relay.on('cdp_event', (sessionId: string, method: string, params: Record<string, unknown>) => {
+    this.onCdpEvent = (sessionId: string, method: string, params: Record<string, unknown>) => {
       const session = this.sessionsByRelayId.get(sessionId);
       if (!session) return;
 
@@ -88,7 +89,13 @@ export class ExtensionDriver {
           break;
         }
       }
-    });
+    };
+    this.relay.on('cdp_event', this.onCdpEvent);
+  }
+
+  destroy(): void {
+    this.relay.off('cdp_event', this.onCdpEvent);
+    this.sessionsByRelayId.clear();
   }
 
   async connect(timeout?: number): Promise<ExtensionSession> {
