@@ -32,11 +32,63 @@ interface CDPNode {
   attributes?: string[];
 }
 
+const MAX_NETWORK_REQUESTS = 100;
+const MAX_CONSOLE_MESSAGES = 100;
+
 export class ExtensionDriver {
   private relay: RelayServer;
+  private sessionsByRelayId = new Map<string, ExtensionSession>();
 
   constructor(relay: RelayServer) {
     this.relay = relay;
+
+    // Subscribe to CDP events from relay to populate session arrays
+    this.relay.on('cdp_event', (sessionId: string, method: string, params: Record<string, unknown>) => {
+      const session = this.sessionsByRelayId.get(sessionId);
+      if (!session) return;
+
+      switch (method) {
+        case 'Network.requestWillBeSent': {
+          const req = params as { request?: { url?: string; method?: string } };
+          if (req.request) {
+            session.networkRequests.push({
+              url: req.request.url || '',
+              method: req.request.method || 'GET',
+              timestamp: Date.now(),
+            });
+            if (session.networkRequests.length > MAX_NETWORK_REQUESTS) {
+              session.networkRequests.shift();
+            }
+          }
+          break;
+        }
+        case 'Runtime.consoleAPICalled': {
+          const msg = params as { type?: string; args?: Array<{ value?: string; description?: string }> };
+          const text = msg.args?.map(a => a.value ?? a.description ?? '').join(' ') || '';
+          session.consoleMessages.push({
+            type: msg.type || 'log',
+            text,
+            timestamp: Date.now(),
+          });
+          if (session.consoleMessages.length > MAX_CONSOLE_MESSAGES) {
+            session.consoleMessages.shift();
+          }
+          break;
+        }
+        case 'Page.javascriptDialogOpening': {
+          if (session.dialogHandler) {
+            const { action, promptText } = session.dialogHandler;
+            this.relay.sendCDPCommand(sessionId, 'Page.handleJavaScriptDialog', {
+              accept: action === 'accept',
+              promptText: promptText || '',
+            }).catch(() => {
+              // Dialog may already be handled
+            });
+          }
+          break;
+        }
+      }
+    });
   }
 
   async connect(timeout?: number): Promise<ExtensionSession> {
@@ -55,6 +107,7 @@ export class ExtensionDriver {
       recordedActions: [],
     };
 
+    this.sessionsByRelayId.set(relaySessionId, session);
     console.error(`[EXT-DRIVER] Session created: ${relaySessionId} (relay port: ${this.relay.port})`);
 
     return session;
@@ -420,30 +473,14 @@ export class ExtensionDriver {
     } catch {
       // Ignore detach errors - extension might already be disconnected
     }
+    this.sessionsByRelayId.delete(session.relaySessionId);
     this.relay.destroySession(session.relaySessionId);
   }
 
   async newTab(session: ExtensionSession, url?: string): Promise<number> {
-    // Use CDP to create a new tab via Runtime.evaluate
-    // Then the extension will handle it
-    const script = url
-      ? `(() => { window.open('${url.replace(/'/g, "\\'")}', '_blank'); return true; })()`
-      : `(() => { window.open('about:blank', '_blank'); return true; })()`;
-
-    await this.relay.sendCDPCommand(session.relaySessionId, 'Runtime.evaluate', {
-      expression: script,
-      returnByValue: true
-    });
-
-    // Wait a bit for tab to open
-    await this.sleep(500);
-
-    // Get list of tabs and return the newest one
-    const tabs = await this.listTabs(session);
-    if (tabs.length > 0) {
-      return tabs[tabs.length - 1].id;
-    }
-    throw new Error('Failed to create new tab');
+    // Use dedicated tab_create command which returns the tab ID directly
+    // This avoids race conditions from listTabs() + last-tab assumption
+    return await this.relay.createTab(session.relaySessionId, url);
   }
 
   async closeTab(session: ExtensionSession, tabId: number): Promise<void> {

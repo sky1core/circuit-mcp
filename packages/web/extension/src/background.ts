@@ -190,7 +190,7 @@ async function listTabs(): Promise<Array<{ id: number; title: string; url: strin
       return !url.startsWith('chrome://') &&
              !url.startsWith('chrome-extension://') &&
              !url.startsWith('edge://') &&
-             !url.startsWith('about:');
+             !(url.startsWith('about:') && url !== 'about:blank');
     })
     .map(tab => ({
       id: tab.id!,
@@ -497,6 +497,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             break;
 
           case 'relay_command':
+            // Defensive: ensure session exists (may arrive before session_created notification)
+            if (!sessions.has(message.sessionId) && message.relayUrl) {
+              sessions.set(message.sessionId, {
+                sessionId: message.sessionId,
+                relayUrl: message.relayUrl,
+                attachedTabId: null,
+                lastActivity: Date.now(),
+              });
+              console.log(`[Background] Session auto-created from relay_command: ${message.sessionId}`);
+              updateBadge();
+            }
             // Command from relay via offscreen
             await handleRelayCommand(message.sessionId, message.message);
             break;
@@ -514,14 +525,25 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     try {
       switch (message.type) {
-        case 'getStatus':
+        case 'getStatus': {
           const offscreenStatus = await sendToOffscreen({ type: 'getStatus' }) as any;
+          // Merge connection data with session data so popup gets attachedTabId
+          const offscreenConns = (offscreenStatus?.connections || []) as Array<{ url: string; connected: boolean }>;
+          const mergedConnections = offscreenConns.map(conn => {
+            // Find a session associated with this relay URL
+            const session = Array.from(sessions.values()).find(s => s.relayUrl === conn.url);
+            return {
+              relayUrl: conn.url,
+              connected: conn.connected,
+              attachedTabId: session?.attachedTabId ?? null,
+            };
+          });
           sendResponse({
-            sessions: Array.from(sessions.values()),
-            connections: offscreenStatus?.connections || [],
+            connections: mergedConnections,
             discoveredRelayUrls: offscreenStatus?.discoveredRelayUrls || [],
           });
           break;
+        }
 
         case 'listTabs':
           const tabs = await listTabs();

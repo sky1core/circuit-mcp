@@ -284,6 +284,7 @@ function handleRelayMessage(relayUrl: string, data: string): void {
       case 'tab_attach':
       case 'tab_detach':
       case 'tab_create':
+      case 'tab_close':
       case 'cdp_command':
         // Forward to service worker for processing
         notifyServiceWorker('relay_command', {

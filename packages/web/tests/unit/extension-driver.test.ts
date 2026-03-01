@@ -13,6 +13,7 @@ const mockRelay = {
   destroySession: vi.fn(),
   sendCDPCommand: vi.fn(),
   closeTab: vi.fn(),
+  on: vi.fn(),
   port: 19988,
 } as unknown as RelayServer;
 

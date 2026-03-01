@@ -465,6 +465,7 @@ export class RelayServer extends EventEmitter {
       case 'tab_attached':
       case 'tab_detached':
       case 'tab_created':
+      case 'tab_close':
         if (id !== undefined) {
           const pending = this.pendingCommands.get(id);
           if (pending && pending.sessionId === sessionId) {
